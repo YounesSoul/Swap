@@ -1,0 +1,213 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum RequestStatus {
+  PENDING
+  ACCEPTED
+  DECLINED
+  CANCELLED
+  EXPIRED
+}
+enum SkillLevel {
+  BEGINNER
+  INTERMEDIATE
+  ADVANCED
+  EXPERT
+}
+
+model Skill {
+  id        String   @id @default(uuid())
+  name      String
+  slug      String   @unique // lowercase for lookups
+  createdAt DateTime @default(now())
+  users     UserSkill[]
+}
+
+model UserSkill {
+  id        String     @id @default(uuid())
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String
+  skill     Skill      @relation(fields: [skillId], references: [id], onDelete: Cascade)
+  skillId   String
+  level     SkillLevel @default(ADVANCED)
+  createdAt DateTime   @default(now())
+
+  @@unique([userId, skillId])
+}
+
+model UserCourse {
+  id        String   @id @default(uuid())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String
+  courseCode String
+  grade     String   // store "A", "A+", etc.
+  createdAt DateTime @default(now())
+
+  @@unique([userId, courseCode])
+}
+
+model User {
+  id            String   @id @default(uuid())
+  email         String   @unique
+  name          String?
+  firstName    String?
+  lastName     String?
+  dateOfBirth  DateTime?
+  passwordHash String?   @db.VarChar(255)
+  image         String?
+  emailVerified DateTime?
+  university    String?
+  timezone      String?
+  createdAt     DateTime @default(now())
+
+  // NextAuth
+  accounts      Account[]
+  authSessions  AuthSession[]
+
+  // App relations
+  requestsFrom        Request[]       @relation("RequestsFrom")
+  requestsTo          Request[]       @relation("RequestsTo")
+  sessionsAsTeacher   Session[]       @relation("TeacherSessions")
+  sessionsAsLearner   Session[]       @relation("LearnerSessions")
+  ledger              CreditLedger[]
+  tokenLedger         TokenLedger[]
+
+  // Chat
+  threadsA            ChatThread[]    @relation("ThreadA")
+  threadsB            ChatThread[]    @relation("ThreadB")
+  messages            Message[]
+
+  isOnboarded Boolean     @default(false)
+  userSkills  UserSkill[]
+  userCourses UserCourse[]
+}
+
+model Account {
+  id                String   @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?  @db.Text
+  access_token      String?  @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?  @db.Text
+  session_state     String?
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model AuthSession {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+model Request {
+  id          String         @id @default(uuid())
+  fromUser    User           @relation("RequestsFrom", fields: [fromUserId], references: [id])
+  fromUserId  String
+  toUser      User           @relation("RequestsTo", fields: [toUserId], references: [id])
+  toUserId    String
+  courseCode  String
+  minutes     Int
+  note        String?
+  status      RequestStatus  @default(PENDING)
+
+  // one-to-one to Session (when accepted)
+  sessionId   String?        @unique
+  session     Session?       @relation("RequestToSession", fields: [sessionId], references: [id])
+
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+
+  @@index([toUserId, status])
+  @@index([fromUserId, status])
+}
+
+model Session {
+  id         String        @id @default(uuid())
+  teacher    User          @relation("TeacherSessions", fields: [teacherId], references: [id])
+  teacherId  String
+  learner    User          @relation("LearnerSessions", fields: [learnerId], references: [id])
+  learnerId  String
+  courseCode String
+  minutes    Int
+  status     String        @default("scheduled")
+  startAt    DateTime?
+  endAt      DateTime?
+  createdAt  DateTime      @default(now())
+  ledger     CreditLedger[]
+  tokens     TokenLedger[]
+
+  request    Request?      @relation("RequestToSession")
+}
+
+model CreditLedger {
+  id        String    @id @default(uuid())
+  user      User      @relation(fields: [userId], references: [id])
+  userId    String
+  session   Session?  @relation(fields: [sessionId], references: [id])
+  sessionId String?
+  delta     Int
+  reason    String
+  createdAt DateTime  @default(now())
+}
+
+model TokenLedger {
+  id        String    @id @default(uuid())
+  user      User      @relation(fields: [userId], references: [id])
+  userId    String
+  session   Session?  @relation(fields: [sessionId], references: [id])
+  sessionId String?
+  tokens    Int
+  reason    String
+  createdAt DateTime  @default(now())
+}
+
+//// CHAT ////
+
+model ChatThread {
+  id              String     @id @default(uuid())
+  participantA    User       @relation("ThreadA", fields: [participantAId], references: [id])
+  participantAId  String
+  participantB    User       @relation("ThreadB", fields: [participantBId], references: [id])
+  participantBId  String
+  createdAt       DateTime   @default(now())
+  messages        Message[]
+
+  // enforce one thread per unordered pair
+  @@unique([participantAId, participantBId], name: "pair_unique")
+}
+
+model Message {
+  id        String     @id @default(uuid())
+  thread    ChatThread @relation(fields: [threadId], references: [id])
+  threadId  String
+  sender    User       @relation(fields: [senderId], references: [id])
+  senderId  String
+  text      String
+  createdAt DateTime   @default(now())
+  readAt    DateTime?
+
+  @@index([threadId, createdAt])
+}

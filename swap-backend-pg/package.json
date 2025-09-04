@@ -1,0 +1,32 @@
+{
+  "name": "swap-backend",
+  "version": "0.3.1",
+  "private": true,
+  "scripts": {
+    "dev": "ts-node-dev --respawn --transpile-only src/main.ts",
+    "start": "node dist/main.js",
+    "build": "tsc -p tsconfig.json",
+    "prisma:generate": "prisma generate",
+    "prisma:migrate": "prisma migrate dev --name init_pg",
+    "prisma:studio": "prisma studio"
+  },
+  "dependencies": {
+    "@nestjs/common": "^10.3.7",
+    "@nestjs/core": "^10.3.7",
+    "@nestjs/platform-express": "^10.3.7",
+    "@nestjs/config": "^3.2.2",
+    "reflect-metadata": "^0.1.13",
+    "rxjs": "^7.8.1",
+    "@prisma/client": "^5.17.0",
+    "class-validator": "^0.14.0",
+    "class-transformer": "^0.5.1",
+    "cors": "^2.8.5",
+    "express": "^4.19.2"
+  },
+  "devDependencies": {
+    "typescript": "^5.6.2",
+    "@types/node": "^20.11.30",
+    "ts-node-dev": "^2.0.0",
+    "prisma": "^5.17.0"
+  }
+}

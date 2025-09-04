@@ -1,0 +1,1 @@
+export default function Courses(){return <div className='space-y-6'><h2 className='text-xl font-semibold'>Courses & Availability</h2><div className='rounded-2xl bg-white p-6 shadow-soft text-sm text-gray-500'>Coming soon</div></div>; }
