@@ -77,6 +77,27 @@ class RemoveCourseBody extends EmailDto {
   code!: string;
 }
 
+class UpsertUserDto {
+  @IsEmail()
+  email!: string;
+
+  @IsOptional()
+  @IsString()
+  name?: string;
+
+  @IsOptional()
+  @IsString()
+  university?: string;
+
+  @IsOptional()
+  @IsString()
+  timezone?: string;
+
+  @IsOptional()
+  @IsString()
+  image?: string;
+}
+
 @Controller('users')
 export class UsersController {
   constructor(private users: UsersService) {}
@@ -84,6 +105,17 @@ export class UsersController {
   @Get('profile')
   profile(@Query('email') email: string) {
     return this.users.profile(email);
+  }
+
+  @Post('upsert')
+  upsertUser(@Body() dto: UpsertUserDto) {
+    return this.users.upsertByEmail(
+      dto.email,
+      dto.name,
+      dto.university,
+      dto.timezone,
+      dto.image,
+    );
   }
 
   @Post('onboarding')

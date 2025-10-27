@@ -86,6 +86,16 @@ model User {
   isOnboarded Boolean     @default(false)
   userSkills  UserSkill[]
   userCourses UserCourse[]
+
+  transcriptIngests TranscriptIngest[]
+  
+  // Ratings
+  ratingsGiven    Rating[] @relation("RaterUser")
+  ratingsReceived Rating[] @relation("RatedUser")
+  
+  // Reports
+  reportsMade     Report[] @relation("ReporterUser")
+  reportsReceived Report[] @relation("ReportedUser")
 }
 
 model Account {
@@ -160,6 +170,8 @@ model Session {
   tokens     TokenLedger[]
 
   request    Request?      @relation("RequestToSession")
+  ratings    Rating[]
+  reports    Report[]
 }
 
 model CreditLedger {
@@ -211,3 +223,57 @@ model Message {
 
   @@index([threadId, createdAt])
 }
+
+model TranscriptIngest {
+  id          String   @id @default(uuid())
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId      String
+  fileName    String
+  fileHash    String
+  parsedJson  Json
+  addedCount  Int
+  createdAt   DateTime @default(now())
+
+  @@index([userId, createdAt])
+}
+
+//// RATINGS ////
+
+model Rating {
+  id          String   @id @default(uuid())
+  rater       User     @relation("RaterUser", fields: [raterId], references: [id], onDelete: Cascade)
+  raterId     String
+  rated       User     @relation("RatedUser", fields: [ratedId], references: [id], onDelete: Cascade)
+  ratedId     String
+  session     Session? @relation(fields: [sessionId], references: [id], onDelete: SetNull)
+  sessionId   String?
+  rating      Int      // 1-5 stars
+  review      String?  // optional text review
+  category    String   // "skill" or "course"
+  skillOrCourse String // skill name or course code
+  createdAt   DateTime @default(now())
+  
+  @@unique([raterId, ratedId, sessionId])
+  @@index([ratedId, category])
+  @@index([ratedId, createdAt])
+}
+
+//// REPORTS ////
+
+model Report {
+  id          String   @id @default(uuid())
+  reporter    User     @relation("ReporterUser", fields: [reporterId], references: [id], onDelete: Cascade)
+  reporterId  String
+  reported    User     @relation("ReportedUser", fields: [reportedId], references: [id], onDelete: Cascade)
+  reportedId  String
+  session     Session? @relation(fields: [sessionId], references: [id], onDelete: SetNull)
+  sessionId   String?
+  reason      String   // reason for the report
+  description String?  // optional detailed description
+  status      String   @default("pending") // pending, reviewed, resolved
+  createdAt   DateTime @default(now())
+  
+  @@index([reportedId, status])
+  @@index([createdAt])
+}
+

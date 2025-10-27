@@ -1,8 +1,13 @@
 import { Body, Controller, Get, Post, Query, Param } from '@nestjs/common';
 import { SessionsService } from './sessions.service';
-import { IsEmail } from 'class-validator';
+import { IsEmail, IsISO8601 } from 'class-validator';
 
 class ActDto { @IsEmail() actingEmail!: string; }
+
+class ScheduleDto { 
+  @IsEmail() actingEmail!: string; 
+  @IsISO8601() startAt!: string; 
+}
 
 @Controller('sessions')
 export class SessionsController {

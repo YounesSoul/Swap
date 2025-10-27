@@ -49,6 +49,20 @@ export class UsersService {
     const { email, name, skills, courses } = params;
 
     return this.prisma.$transaction(async (tx) => {
+      // Check if user exists and their current state
+      const existingUser = await tx.user.findUnique({ 
+        where: { email },
+        select: { 
+          id: true, 
+          isOnboarded: true,
+          tokenLedger: { 
+            select: { tokens: true },
+            orderBy: { createdAt: 'desc' },
+            take: 1
+          }
+        }
+      });
+
       const user = await tx.user.upsert({
         where: { email },
         update: { name },
@@ -58,6 +72,24 @@ export class UsersService {
           tokenLedger: { create: { tokens: 1, reason: 'initial_grant' } },
         },
       });
+
+      // Give free token if completing onboarding for the first time
+      // This ensures users get their token regardless of sign-in method (Google, Azure AD, Email/Password)
+      if (existingUser && !existingUser.isOnboarded) {
+        // Check if user already has any tokens from initial grant
+        const hasTokens = existingUser.tokenLedger.length > 0 && existingUser.tokenLedger[0].tokens > 0;
+        
+        // Only give token if they don't already have one
+        if (!hasTokens) {
+          await tx.tokenLedger.create({
+            data: {
+              userId: user.id,
+              tokens: 1,
+              reason: 'onboarding_completion'
+            }
+          });
+        }
+      }
 
       // upsert skills
       for (const s of skills) {

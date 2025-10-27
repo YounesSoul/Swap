@@ -11,9 +11,12 @@
     "outDir": "dist",
     "baseUrl": "./",
     "strict": true,
-    "esModuleInterop": true
+    "esModuleInterop": true,
+    "types": ["node", "express", "multer"],
+    "typeRoots": ["./types", "./node_modules/@types"]
   },
   "include": [
-    "src/**/*.ts"
+    "src/**/*.ts",
+    "types/**/*.d.ts"
   ]
 }

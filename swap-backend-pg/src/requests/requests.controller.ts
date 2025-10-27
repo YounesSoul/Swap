@@ -25,4 +25,6 @@ export class RequestsController {
   }
   @Post(':id/accept') accept(@Param('id') id: string, @Body() dto: ActDto) { return this.reqs.accept(id, dto.actingEmail); }
   @Post(':id/decline') decline(@Param('id') id: string, @Body() dto: ActDto) { return this.reqs.decline(id, dto.actingEmail); }
+  @Post('clear-answered') clearAnswered(@Body() dto: ActDto) { return this.reqs.clearAnsweredRequests(dto.actingEmail); }
+  @Post('clear-all') clearAll(@Body() dto: ActDto) { return this.reqs.clearAllRequests(dto.actingEmail); }
 }

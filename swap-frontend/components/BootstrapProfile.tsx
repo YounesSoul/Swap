@@ -10,13 +10,36 @@ export default function BootstrapProfile(){
   const setMe=useSwap(s=>s.setMe);
   const seed=useSwap(s=>s.seed);
   useEffect(()=>{(async()=>{
-    if(session?.user?.email){
-      const email=session.user.email; const name=session.user.name||email.split("@")[0];
-      const timezone=Intl.DateTimeFormat().resolvedOptions().timeZone;
-      const image=(session.user as any).image as string | undefined;
-      setMe({id:"me",name,email,timezone,image});
-      await upsertUser({email,name,timezone,image});
-      await seed(email);
+    if (session?.user?.email) {
+      const { email, name, image } = session.user;
+      const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+      
+      // Upsert user and get the actual user ID from the response
+      const result = await upsertUser({ 
+        email, 
+        name: name || undefined, 
+        timezone, 
+        image: image || undefined 
+      });
+      
+      if (result.ok && result.data) {
+        setMe({
+          id: result.data.id, // Use the actual UUID from the database
+          name: name || '',
+          email,
+          timezone,
+          image: image || undefined,
+        });
+      } else {
+        // Fallback if upsert fails
+        setMe({ 
+          id: "me", 
+          name: name || '', 
+          email, 
+          timezone, 
+          image: image || undefined 
+        });
+      }
     }
   })();},[session,setMe,seed]);
   return null;

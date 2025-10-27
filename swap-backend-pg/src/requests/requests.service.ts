@@ -81,7 +81,11 @@ export class RequestsService {
     const user = await this.ensureUser(email);
     return this.prisma.request.findMany({
       where: { toUserId: user.id, OR: [{ sessionId: null }, { session: { status: { not: 'done' } } }] },
-      include: { session: { select: { status: true } } },
+      include: { 
+        session: { select: { status: true } },
+        fromUser: { select: { id: true, name: true, email: true, image: true } },
+        toUser: { select: { id: true, name: true, email: true, image: true } }
+      },
       orderBy: { createdAt: 'desc' },
     });
   }
@@ -90,7 +94,11 @@ export class RequestsService {
     const user = await this.ensureUser(email);
     return this.prisma.request.findMany({
       where: { fromUserId: user.id, OR: [{ sessionId: null }, { session: { status: { not: 'done' } } }] },
-      include: { session: { select: { status: true } } },
+      include: { 
+        session: { select: { status: true } },
+        fromUser: { select: { id: true, name: true, email: true, image: true } },
+        toUser: { select: { id: true, name: true, email: true, image: true } }
+      },
       orderBy: { createdAt: 'desc' },
     });
   }
@@ -159,5 +167,48 @@ export class RequestsService {
     if (!req) throw new BadRequestException('Request not found');
     if (req.toUserId !== to.id) throw new BadRequestException('Not authorized to decline');
     return this.prisma.request.update({ where: { id }, data: { status: RequestStatus.DECLINED } });
+  }
+
+  async clearAnsweredRequests(actingEmail: string) {
+    const user = await this.ensureUser(actingEmail);
+    
+    // Delete all requests where user is either sender or receiver and status is ACCEPTED or DECLINED
+    const result = await this.prisma.request.deleteMany({
+      where: {
+        OR: [
+          { fromUserId: user.id },
+          { toUserId: user.id }
+        ],
+        status: {
+          in: [RequestStatus.ACCEPTED, RequestStatus.DECLINED]
+        }
+      }
+    });
+
+    return { 
+      success: true, 
+      deletedCount: result.count,
+      message: `Cleared ${result.count} answered requests`
+    };
+  }
+
+  async clearAllRequests(actingEmail: string) {
+    const user = await this.ensureUser(actingEmail);
+    
+    // Delete ALL requests where user is either sender or receiver
+    const result = await this.prisma.request.deleteMany({
+      where: {
+        OR: [
+          { fromUserId: user.id },
+          { toUserId: user.id }
+        ]
+      }
+    });
+
+    return { 
+      success: true, 
+      deletedCount: result.count,
+      message: `Cleared ${result.count} requests`
+    };
   }
 }

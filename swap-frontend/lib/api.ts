@@ -11,6 +11,35 @@ export async function listInbox(email:string){ if(!API_BASE) return []; try{cons
 export async function listSent(email:string){ if(!API_BASE) return []; try{const r=await fetch(`${API_BASE}/requests?sent=1&email=${encodeURIComponent(email)}`); return await safeJson(r) || []; }catch{return [];} }
 export async function acceptRequest(id:string,actingEmail:string){ if(!API_BASE) return {ok:false}; try{const r=await fetch(`${API_BASE}/requests/${id}/accept`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({actingEmail})}); return {ok:r.ok,data:await safeJson(r)};}catch{return {ok:false};} }
 export async function declineRequest(id:string,actingEmail:string){ if(!API_BASE) return {ok:false}; try{const r=await fetch(`${API_BASE}/requests/${id}/decline`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({actingEmail})}); return {ok:r.ok,data:await safeJson(r)};}catch{return {ok:false};} }
+export async function clearAnsweredRequests(actingEmail: string) {
+  if (!API_BASE) return { ok: false };
+  try {
+    const r = await fetch(`${API_BASE}/requests/clear-answered`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ actingEmail })
+    });
+    const data = await safeJson(r);
+    return { ok: r.ok, data };
+  } catch {
+    return { ok: false };
+  }
+}
+
+export async function clearAllRequests(actingEmail: string) {
+  if (!API_BASE) return { ok: false };
+  try {
+    const r = await fetch(`${API_BASE}/requests/clear-all`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ actingEmail })
+    });
+    const data = await safeJson(r);
+    return { ok: r.ok, data };
+  } catch {
+    return { ok: false };
+  }
+}
 export async function listSessions(email:string){ if(!API_BASE) return []; try{const r=await fetch(`${API_BASE}/sessions?email=${encodeURIComponent(email)}`); return await safeJson(r) || []; }catch{return [];} }
 export async function getLedger(email:string){ if(!API_BASE) return {balance:0,entries:[]}; try{const r=await fetch(`${API_BASE}/ledger?email=${encodeURIComponent(email)}`); return await safeJson(r) || {balance:0,entries:[]}; }catch{return {balance:0,entries:[]};} }
 export async function getTokens(email:string){ if(!API_BASE) return {tokens:0,entries:[]}; try{const r=await fetch(`${API_BASE}/tokens?email=${encodeURIComponent(email)}`); return await safeJson(r) || {tokens:0,entries:[]}; }catch{return {tokens:0,entries:[]};} }
@@ -127,4 +156,39 @@ export async function removeCourse(email: string, code: string) {
     body: JSON.stringify({ email, code })
   });
   return r.ok ? r.json() : null;
+}
+
+// Rating API functions
+export async function getUserRatingStats(userId: string, category?: 'skill' | 'course') {
+  if (!API_BASE) return null;
+  try {
+    const url = `${API_BASE}/ratings/user/${encodeURIComponent(userId)}/stats${category ? `?category=${category}` : ''}`;
+    const r = await fetch(url);
+    return r.ok ? r.json() : null;
+  } catch {
+    return null;
+  }
+}
+
+export async function createRating(ratingData: {
+  raterId: string;
+  ratedId: string;
+  sessionId?: string;
+  rating: number;
+  review?: string;
+  category: 'skill' | 'course';
+  skillOrCourse: string;
+}) {
+  if (!API_BASE) return { ok: false };
+  try {
+    const r = await fetch(`${API_BASE}/ratings`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(ratingData),
+    });
+    const data = await r.json().catch(() => null);
+    return { ok: r.ok, data };
+  } catch {
+    return { ok: false };
+  }
 }

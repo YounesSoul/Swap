@@ -9,9 +9,11 @@ import { LedgerModule } from './ledger/ledger.module';
 import { TokensModule } from './tokens/tokens.module';
 import { ChatModule } from './chat/chat.module';
 import { SearchModule } from './search/search.module';
+import { TranscriptsModule } from './transcripts/transcripts.module';
+import { RatingModule } from './ratings/ratings.module';
 
 @Module({
-  imports: [ConfigModule.forRoot({ isGlobal: true }), UsersModule, RequestsModule, SessionsModule, LedgerModule, TokensModule, ChatModule, SearchModule],
+  imports: [ConfigModule.forRoot({ isGlobal: true }), UsersModule, RequestsModule, SessionsModule, LedgerModule, TokensModule, ChatModule, SearchModule, TranscriptsModule, RatingModule],
   providers: [PrismaService],
 })
 export class AppModule {}

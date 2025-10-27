@@ -3,6 +3,8 @@ import {
   createRequest,
   acceptRequest as apiAccept,
   declineRequest as apiDecline,
+  clearAnsweredRequests as apiClearAnswered,
+  clearAllRequests as apiClearAll,
   getLedger,
   listSessions,
   listInbox,
@@ -13,6 +15,7 @@ import {
   getProfile,
   saveOnboarding as apiSaveOnboarding,
   searchTeachers as apiSearchTeachers,
+  getUserRatingStats,
 } from "@/lib/api";
 import { setupSessionReminders } from "@/lib/notifications";
 
@@ -66,7 +69,7 @@ type State = {
   //onboarding/profile
   onboarded: boolean;
   mySkills: string[];
-  myCourses: string[];
+  myCourses: { courseCode: string; grade: string }[];
 
   inbox: RequestItem[];
   sent: RequestItem[];
@@ -84,6 +87,8 @@ type State = {
   sendRequest: (toEmail: string, courseCode: string, minutes: number, note?: string) => Promise<{ ok: boolean; error?: string }>;
   acceptRequest: (id: string) => Promise<void>;
   declineRequest: (id: string) => Promise<void>;
+  clearAnsweredRequests: () => Promise<void>;
+  clearAllRequests: () => Promise<void>;
   completeSession: (id: string) => Promise<void>;
   scheduleSession: (id: string, startAtISO: string) => Promise<void>;
   saveOnboarding: (name: string | undefined, skills: string[], courses: string[]) => Promise<boolean>;
@@ -128,7 +133,7 @@ export const useSwap = create<State>((set, get) => ({
       // profile bits
       onboarded: !!profile?.isOnboarded,
       mySkills: (profile?.userSkills || []).map((us: any) => us.skill?.name).filter(Boolean),
-      myCourses: (profile?.userCourses || []).map((c: any) => c.courseCode),
+      myCourses: (profile?.userCourses || []).map((c: any) => ({ courseCode: c.courseCode, grade: c.grade })),
 
       // existing data
       inbox: inbox || [],
@@ -206,6 +211,29 @@ export const useSwap = create<State>((set, get) => ({
     if (res.ok) set((s) => ({ inbox: s.inbox.map((r) => (r.id === id ? { ...r, status: "DECLINED" } : r)) }));
   },
 
+  clearAnsweredRequests: async () => {
+    const me = get().me;
+    if (!me) return;
+    const res = await apiClearAnswered(me.email);
+    if (res.ok) {
+      // Remove all accepted/declined requests from both inbox and sent
+      set((s) => ({
+        inbox: s.inbox.filter((r) => r.status !== "ACCEPTED" && r.status !== "DECLINED"),
+        sent: s.sent.filter((r) => r.status !== "ACCEPTED" && r.status !== "DECLINED"),
+      }));
+    }
+  },
+
+  clearAllRequests: async () => {
+    const me = get().me;
+    if (!me) return;
+    const res = await apiClearAll(me.email);
+    if (res.ok) {
+      // Clear all requests
+      set({ inbox: [], sent: [] });
+    }
+  },
+
   completeSession: async (id) => {
     const me = get().me;
     if (!me) return;
@@ -257,7 +285,19 @@ export const useSwap = create<State>((set, get) => ({
   //search for teachers by skill or course
   searchTeachers: async (opts) => {
     const results = await apiSearchTeachers(opts);
-    set({ searchResults: results || [] });
+    
+    // Fetch ratings for each teacher
+    const resultsWithRatings = await Promise.all(
+      (results || []).map(async (teacher: any) => {
+        const ratingStats = await getUserRatingStats(teacher.user.id);
+        return {
+          ...teacher,
+          ratingData: ratingStats?.data || { averageRating: 0, totalRatings: 0 }
+        };
+      })
+    );
+    
+    set({ searchResults: resultsWithRatings });
   },
     addSkill: async (name, level = "ADVANCED") => {
     const me = get().me; if (!me) return;
@@ -273,11 +313,11 @@ export const useSwap = create<State>((set, get) => ({
   addCourse: async (code, grade = "A") => {
     const me = get().me; if (!me) return;
     const profile = await apiAddCourse(me.email, code.toUpperCase(), grade);
-    if (profile) set({ myCourses: (profile.userCourses || []).map((c: any) => c.courseCode) });
+    if (profile) set({ myCourses: (profile.userCourses || []).map((c: any) => ({ courseCode: c.courseCode, grade: c.grade })) });
   },
   removeCourse: async (code) => {
     const me = get().me; if (!me) return;
     const profile = await apiRemoveCourse(me.email, code.toUpperCase());
-    if (profile) set({ myCourses: (profile.userCourses || []).map((c: any) => c.courseCode) });
+    if (profile) set({ myCourses: (profile.userCourses || []).map((c: any) => ({ courseCode: c.courseCode, grade: c.grade })) });
   }
 }));
