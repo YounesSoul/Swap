@@ -34,7 +34,7 @@ export class SearchService {
       byUser[u.id].skills.push({ name: row.skill.name, level: row.level });
     }
 
-    // Add rating information
+    // Add rating information and time slots
     const userResults = Object.values(byUser);
     for (const result of userResults) {
       const ratingStats = await this.ratingService.getUserRatingStats(result.user.id, 'skill');
@@ -42,6 +42,23 @@ export class SearchService {
         average: ratingStats.averageRating || 4.5, // Default to 4.5 if no ratings
         count: ratingStats.totalRatings,
       };
+
+      // Get available time slots for this skill
+      const skillName = result.skills[0]?.name;
+      if (skillName) {
+        const timeSlots = await this.prisma.timeSlot.findMany({
+          where: {
+            teacherId: result.user.id,
+            type: 'skill',
+            skillName,
+            isActive: true,
+          },
+          orderBy: [{ dayOfWeek: 'asc' }, { startTime: 'asc' }],
+        });
+        result.timeSlots = timeSlots;
+      } else {
+        result.timeSlots = [];
+      }
     }
 
     return userResults;
@@ -58,15 +75,28 @@ export class SearchService {
       user: { id: r.user.id, name: r.user.name, email: r.user.email, image: r.user.image },
       course: { code: r.courseCode, grade: r.grade },
       rating: { average: 4.5, count: 0 }, // Will be updated below
+      timeSlots: [] as any[], // Will be updated below
     }));
 
-    // Add rating information
+    // Add rating information and time slots
     for (const result of results) {
       const ratingStats = await this.ratingService.getUserRatingStats(result.user.id, 'course');
       result.rating = {
         average: ratingStats.averageRating || 4.5, // Default to 4.5 if no ratings
         count: ratingStats.totalRatings,
       };
+
+      // Get available time slots for this course
+      const timeSlots = await this.prisma.timeSlot.findMany({
+        where: {
+          teacherId: result.user.id,
+          type: 'course',
+          courseCode: result.course.code,
+          isActive: true,
+        },
+        orderBy: [{ dayOfWeek: 'asc' }, { startTime: 'asc' }],
+      });
+      result.timeSlots = timeSlots;
     }
 
     return results;

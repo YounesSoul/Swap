@@ -3,10 +3,11 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { SearchHeader } from "@/components/search/SearchHeader";
-import { SearchResultsGrid } from "@/components/search/SearchResultsNew";
+import { SearchResultsGrid } from "@/components/search/SearchResults";
 import { ChromaGrid } from "@/components/ui/enhanced-components";
 import { useSwap } from "@/lib/store";
 import { toast } from "sonner";
+import { API_BASE } from "@/lib/api";
 
 export default function MatchesPage() {
   const [q, setQ] = useState("");
@@ -15,6 +16,7 @@ export default function MatchesPage() {
   const results = useSwap((s) => s.searchResults);
   const sendRequest = useSwap((s) => s.sendRequest);
   const me = useSwap((s) => s.me);
+  const myInterests = useSwap((s) => s.myInterests);
   const router = useRouter();
   const [bookingEmail, setBookingEmail] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -43,48 +45,90 @@ export default function MatchesPage() {
     }
   }
 
-  // Transform results to match SearchResults component format
-  const searchResults = results.map((r: any) => {
-    const isMe = r.user.email?.toLowerCase() === me?.email?.toLowerCase();
-    const label = (r.course?.code || (r.skills?.[0]?.name ?? "SKILL")).toString();
-    
-    return {
-      id: r.user.email,
-      title: r.user.name || r.user.email,
-      description: r.skills 
-        ? `Skills: ${r.skills.map((s: any) => `${s.name} (${s.level})`).join(", ")}`
-        : r.course 
-        ? `Aced: ${r.course.code} (${r.course.grade})`
-        : "No description available",
-      type: mode as "skill" | "course",
-      rating: r.ratingData?.averageRating || 0,
-      reviewCount: r.ratingData?.totalRatings || 0,
-      instructor: r.user.name || r.user.email,
-      level: r.skills?.[0]?.level || "Intermediate",
-      duration: "1 hour",
-      tags: r.skills 
-        ? r.skills.map((s: any) => s.name)
-        : r.course 
-        ? [r.course.code]
-        : [],
-      image: `https://api.dicebear.com/7.x/avataaars/svg?seed=${r.user.email}`,
-      isMe,
-      originalData: r,
-      label
-    };
-  });
+  async function onBookTimeSlot(
+    email: string, 
+    timeSlotId: string, 
+    dayOfWeek: string, 
+    startTime: string, 
+    endTime: string
+  ) {
+    if (!me?.email) {
+      toast.error("Please sign in to book");
+      return;
+    }
 
-  const handleResultClick = async (result: any) => {
-    if (result.isMe) return;
+    setBookingEmail(email);
     
-    // You can implement different actions here
-    // For now, let's open the chat
-    window.open(`/chat?with=${encodeURIComponent(result.id)}`, "_self");
-  };
+    try {
+      const label = mode === "skill" ? q.trim() : q.trim().toUpperCase();
+      
+      // Send booking request with time slot
+      const response = await fetch(`${API_BASE}/requests`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          fromEmail: me.email,
+          toEmail: email,
+          courseCode: label,
+          minutes: 60,
+          note: `Booking for ${dayOfWeek} ${startTime}-${endTime}`,
+          timeSlotId, // Include timeslot info in the request
+        }),
+      });
+
+      if (response.ok) {
+        toast.success("Request sent!", {
+          description: `Teacher will be notified about ${dayOfWeek} ${startTime}-${endTime}`,
+        });
+        router.push("/requests");
+      } else {
+        const error = await response.json();
+        toast.error(error.message || "Failed to send request");
+      }
+    } catch (error) {
+      toast.error("Failed to send request");
+    } finally {
+      setBookingEmail(null);
+    }
+  }
+
+  function onMessage(email: string) {
+    router.push(`/chat?with=${encodeURIComponent(email)}`);
+  }
+
+  function handleInterestClick(interest: { type: 'skill' | 'course', name: string }) {
+    setMode(interest.type);
+    setQ(interest.name);
+    setTimeout(() => {
+      search(interest.type === 'skill' ? { skill: interest.name } : { course: interest.name.toUpperCase() });
+    }, 100);
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-gray-100">
       <div className="max-w-7xl mx-auto px-6 py-8">
+        {/* Your Learning Interests */}
+        {myInterests.length > 0 && (
+          <div className="mb-8">
+            <h2 className="text-xl font-semibold text-gray-800 mb-4">Your Learning Interests</h2>
+            <div className="flex flex-wrap gap-2">
+              {myInterests.map((interest, i) => (
+                <button
+                  key={i}
+                  onClick={() => handleInterestClick(interest)}
+                  className={`px-4 py-2 rounded-full text-sm font-medium transition-all hover:scale-105 ${
+                    interest.type === 'skill'
+                      ? 'bg-purple-100 text-purple-700 hover:bg-purple-200'
+                      : 'bg-blue-100 text-blue-700 hover:bg-blue-200'
+                  }`}
+                >
+                  {interest.name}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* Beautiful Search Header */}
         <SearchHeader
           searchQuery={q}
@@ -94,47 +138,22 @@ export default function MatchesPage() {
           onModeChange={setMode}
         />
 
-        {/* Results Section with ChromaGrid Background */}
-        <div className="mt-12 relative">
-          <ChromaGrid className="absolute inset-0 opacity-20">
-            <div></div>
-          </ChromaGrid>
-          
-          <div className="relative z-10">
-            <SearchResultsGrid
-              results={searchResults}
-              loading={loading}
-              hasSearched={!!q && results.length >= 0}
-              onResultClick={handleResultClick}
-              customActions={(result: any) => (
-                <div className="space-y-2">
-                  <div className="flex gap-2">
-                    <button
-                      className="flex-1 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors disabled:opacity-50"
-                      disabled={result.isMe}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        window.open(`/chat?with=${encodeURIComponent(result.id)}`, "_self");
-                      }}
-                    >
-                      {result.isMe ? "It's you" : "Message"}
-                    </button>
-                    
-                    <button
-                      className="flex-1 px-4 py-2 bg-emerald-500 text-white rounded-lg hover:bg-emerald-600 transition-colors disabled:opacity-50"
-                      disabled={result.isMe || bookingEmail === result.id}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onBook(result.id, result.label);
-                      }}
-                    >
-                      {bookingEmail === result.id ? "Booking..." : "Book Session"}
-                    </button>
-                  </div>
-                </div>
-              )}
-            />
-          </div>
+        {/* Results Section */}
+        <div className="mt-12">
+          <SearchResultsGrid
+            results={results}
+            me={me}
+            onMessage={onMessage}
+            onBook={onBook}
+            onBookTimeSlot={onBookTimeSlot}
+            bookingEmail={bookingEmail}
+            mode={mode}
+            searchQuery={q}
+            onSearch={(query) => {
+              setQ(query);
+              setTimeout(onSearch, 100);
+            }}
+          />
         </div>
       </div>
 

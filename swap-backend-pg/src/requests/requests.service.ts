@@ -9,13 +9,24 @@ export class RequestsService {
   private async ensureUser(email: string) {
     let u = await this.prisma.user.findUnique({ where: { email } });
     if (!u) {
-      u = await this.prisma.user.create({
-        data: {
-          email,
-          // 🎁 initial token for first-time implicit creation
-          tokenLedger: { create: { tokens: 1, reason: 'initial_grant' } },
-        },
-      });
+      try {
+        u = await this.prisma.user.create({
+          data: {
+            email,
+            // 🎁 initial token for first-time implicit creation
+            tokenLedger: { create: { tokens: 1, reason: 'initial_grant' } },
+          },
+        });
+      } catch (error: any) {
+        // Handle race condition - another request might have created the user
+        if (error.code === 'P2002') {
+          // Unique constraint violation - fetch the user that was created
+          u = await this.prisma.user.findUnique({ where: { email } });
+          if (!u) throw error; // Should never happen, but just in case
+        } else {
+          throw error;
+        }
+      }
     }
     return u;
   }
@@ -28,7 +39,7 @@ export class RequestsService {
     return agg._sum.tokens ?? 0;
   }
 
-  async create(fromEmail: string, toEmail: string, courseCode: string, minutes: number, note?: string) {
+  async create(fromEmail: string, toEmail: string, courseCode: string, minutes: number, note?: string, timeSlotId?: string) {
   if (fromEmail.toLowerCase() === toEmail.toLowerCase()) {
     throw new BadRequestException('Cannot send a request to yourself.');
   }
@@ -37,6 +48,20 @@ export class RequestsService {
     this.ensureUser(fromEmail),
     this.ensureUser(toEmail),
   ]);
+
+  // If timeSlotId provided, validate it exists and is available
+  if (timeSlotId) {
+    const timeSlot = await this.prisma.timeSlot.findUnique({ where: { id: timeSlotId } });
+    if (!timeSlot) {
+      throw new BadRequestException('Time slot not found');
+    }
+    if (!timeSlot.isActive) {
+      throw new BadRequestException('Time slot is not active');
+    }
+    if (timeSlot.teacherId !== toUser.id) {
+      throw new BadRequestException('Time slot does not belong to this teacher');
+    }
+  }
 
   // require ≥1 token
   const balanceAgg = await this.prisma.tokenLedger.aggregate({
@@ -64,6 +89,8 @@ export class RequestsService {
     throw new BadRequestException('You already have an active booking request with this user.');
   }
 
+  // Create pending request (teacher must accept)
+  // Include timeSlotId if provided - it will be used when teacher accepts
   return this.prisma.request.create({
     data: {
       fromUserId: fromUser.id,
@@ -71,6 +98,7 @@ export class RequestsService {
       courseCode,
       minutes,
       note,
+      timeSlotId, // Store the timeSlotId for later use when accepted
     },
   });
 }
@@ -107,7 +135,10 @@ export class RequestsService {
     const to = await this.ensureUser(actingEmail);
 
     return this.prisma.$transaction(async (tx: Prisma.TransactionClient) => {
-      const req = await tx.request.findUnique({ where: { id } });
+      const req = await tx.request.findUnique({ 
+        where: { id },
+        include: { timeSlot: true } // Include timeSlot to get schedule info
+      });
       if (!req) throw new BadRequestException('Request not found');
       if (req.toUserId !== to.id) throw new BadRequestException('Not authorized to accept');
       if (req.status !== RequestStatus.PENDING) return req;
@@ -122,12 +153,43 @@ export class RequestsService {
         throw new BadRequestException('Requester has insufficient tokens.');
       }
 
+      // Calculate startAt and endAt if timeSlot exists
+      let startAt: Date | undefined;
+      let endAt: Date | undefined;
+      
+      if (req.timeSlot) {
+        // Calculate next occurrence of the day of week
+        const now = new Date();
+        const daysOfWeek = ['SUNDAY', 'MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY'];
+        const targetDayIndex = daysOfWeek.indexOf(req.timeSlot.dayOfWeek);
+        const currentDayIndex = now.getDay();
+        
+        let daysUntilTarget = targetDayIndex - currentDayIndex;
+        if (daysUntilTarget <= 0) daysUntilTarget += 7; // Next week if today or past
+        
+        const targetDate = new Date(now);
+        targetDate.setDate(now.getDate() + daysUntilTarget);
+        
+        // Parse time (HH:MM format)
+        const [startHour, startMin] = req.timeSlot.startTime.split(':').map(Number);
+        const [endHour, endMin] = req.timeSlot.endTime.split(':').map(Number);
+        
+        startAt = new Date(targetDate);
+        startAt.setHours(startHour, startMin, 0, 0);
+        
+        endAt = new Date(targetDate);
+        endAt.setHours(endHour, endMin, 0, 0);
+      }
+
       const session = await tx.session.create({
         data: {
           teacherId: req.toUserId,
           learnerId: req.fromUserId,
           courseCode: req.courseCode,
           minutes: req.minutes,
+          timeSlotId: req.timeSlotId,
+          startAt, // Set automatically if timeSlot exists
+          endAt,   // Set automatically if timeSlot exists
         },
       });
 

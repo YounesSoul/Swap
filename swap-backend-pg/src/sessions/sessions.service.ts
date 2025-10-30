@@ -12,7 +12,11 @@ export class SessionsService {
     return this.prisma.session.findMany({
       where: { OR: [{ teacherId: u.id }, { learnerId: u.id }] },
       orderBy: { createdAt: 'desc' },
-      include: { teacher: { select: { email: true, name: true } }, learner: { select: { email: true, name: true } } },
+      include: { 
+        teacher: { select: { email: true, name: true, image: true, id: true } }, 
+        learner: { select: { email: true, name: true, image: true, id: true } },
+        timeSlot: { select: { dayOfWeek: true, startTime: true, endTime: true } } // Include timeslot info
+      },
     });
   }
 

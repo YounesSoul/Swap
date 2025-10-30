@@ -3,7 +3,7 @@ import React, { useState, useEffect } from "react";
 import { useSwap } from "@/lib/store";
 import { RatingModal } from "@/components/ui/RatingModal";
 import { SessionCard } from "@/components/sessions/SessionCard";
-import { SessionStatsCarousel } from "@/components/sessions/SessionStatsCarousel";
+import { SimpleSessionStats } from "@/components/sessions/SimpleSessionStats";
 import { SchedulingModal } from "@/components/sessions/SchedulingModal";
 import { toast } from "sonner";
 
@@ -153,77 +153,79 @@ export default function SessionsPage() {
   }
 
   return (
-    <div className="space-y-8 p-6">
-      {/* Stats Carousel */}
-      <SessionStatsCarousel stats={stats} onFilterChange={setFilter} />
+    <div className="min-h-screen bg-gray-50 pb-12">
+      <div className="container mx-auto px-6 py-8 max-w-7xl space-y-6">
+        {/* Stats Overview */}
+        <SimpleSessionStats stats={stats} onFilterChange={setFilter} />
 
-      {/* Sessions List */}
-      <div className="space-y-6">
-        {filteredSessions.length === 0 ? (
-          <div className="text-center py-12">
-            <div className="text-gray-500 text-lg">
-              {filter === "all" ? "No sessions yet." : `No ${filter.replace('-', ' ')} sessions.`}
+        {/* Sessions List */}
+        <div className="space-y-6">
+          {filteredSessions.length === 0 ? (
+            <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-12 text-center">
+              <div className="text-gray-500 text-lg font-semibold">
+                {filter === "all" ? "No sessions yet." : `No ${filter.replace('-', ' ')} sessions.`}
+              </div>
+              <div className="text-gray-400 text-sm mt-2 font-medium">
+                {filter === "all" 
+                  ? "Create a request to start learning!" 
+                  : "Try changing the filter to see other sessions."
+                }
+              </div>
             </div>
-            <div className="text-gray-400 text-sm mt-2">
-              {filter === "all" 
-                ? "Create a request to start learning!" 
-                : "Try changing the filter to see other sessions."
-              }
-            </div>
-          </div>
-        ) : (
-          <div className="grid gap-4">
-            {filteredSessions.map((session: any) => {
-              const isLearner = session.learner?.email === me.email;
-              const isRated = ratedSessions.has(session.id);
+          ) : (
+            <div className="grid gap-4">
+              {filteredSessions.map((session: any) => {
+                const isLearner = session.learner?.email === me.email;
+                const isRated = ratedSessions.has(session.id);
 
-              return (
-                <SessionCard
-                  key={session.id}
-                  session={session}
-                  currentUser={me}
-                  isRated={isRated}
-                  onSchedule={handleSchedule}
-                  onComplete={handleComplete}
-                  onRate={handleRate}
-                />
-              );
-            })}
-          </div>
+                return (
+                  <SessionCard
+                    key={session.id}
+                    session={session}
+                    currentUser={me}
+                    isRated={isRated}
+                    onSchedule={handleSchedule}
+                    onComplete={handleComplete}
+                    onRate={handleRate}
+                  />
+                );
+              })}
+            </div>
+          )}
+        </div>
+
+        {/* Scheduling Modal */}
+        {schedulingModal.isOpen && schedulingModal.session && (
+          <SchedulingModal
+            isOpen={schedulingModal.isOpen}
+            onClose={() => setSchedulingModal({ isOpen: false })}
+            onSchedule={handleScheduleSubmit}
+            session={schedulingModal.session}
+            isLearner={schedulingModal.session.learner?.email === me.email}
+            loading={loading}
+          />
+        )}
+
+        {/* Rating Modal */}
+        {ratingModal.isOpen && ratingModal.session && ratingModal.teacher && (
+          <RatingModal
+            isOpen={ratingModal.isOpen}
+            onClose={() => {
+              setRatingModal({ isOpen: false });
+              checkRatedSessions();
+            }}
+            user={{
+              id: ratingModal.teacher.id,
+              name: ratingModal.teacher.name || ratingModal.teacher.email,
+              email: ratingModal.teacher.email,
+            }}
+            sessionId={ratingModal.session.id}
+            skillOrCourse={ratingModal.session.courseCode}
+            category="course"
+            currentUserId={ratingModal.session.learnerId}
+          />
         )}
       </div>
-
-      {/* Scheduling Modal */}
-      {schedulingModal.isOpen && schedulingModal.session && (
-        <SchedulingModal
-          isOpen={schedulingModal.isOpen}
-          onClose={() => setSchedulingModal({ isOpen: false })}
-          onSchedule={handleScheduleSubmit}
-          session={schedulingModal.session}
-          isLearner={schedulingModal.session.learner?.email === me.email}
-          loading={loading}
-        />
-      )}
-
-      {/* Rating Modal */}
-      {ratingModal.isOpen && ratingModal.session && ratingModal.teacher && (
-        <RatingModal
-          isOpen={ratingModal.isOpen}
-          onClose={() => {
-            setRatingModal({ isOpen: false });
-            checkRatedSessions();
-          }}
-          user={{
-            id: ratingModal.teacher.id,
-            name: ratingModal.teacher.name || ratingModal.teacher.email,
-            email: ratingModal.teacher.email,
-          }}
-          sessionId={ratingModal.session.id}
-          skillOrCourse={ratingModal.session.courseCode}
-          category="course"
-          currentUserId={ratingModal.session.learnerId}
-        />
-      )}
     </div>
   );
 }

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { signIn } from "next-auth/react";
+import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import Image from "next/image";
@@ -12,6 +12,7 @@ export default function SignInPage() {
   const [email, setEmail] = useState("");
   const [pwd, setPwd] = useState("");
   const [loading, setLoading] = useState(false);
+  const supabase = createClient();
 
   const router = useRouter();
   const params = useSearchParams();
@@ -20,18 +21,32 @@ export default function SignInPage() {
   async function onLogin(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
-    const res = await signIn("credentials", {
+
+    const { data, error } = await supabase.auth.signInWithPassword({
       email,
       password: pwd,
-      redirect: false,
-      callbackUrl,
     });
+
     setLoading(false);
 
-    if (res && !res.error) {
-      router.replace(res.url ?? callbackUrl);
+    if (error) {
+      alert(error.message || "Invalid email or password");
     } else {
-      alert(res?.error || "Invalid email or password");
+      router.push(callbackUrl);
+      router.refresh();
+    }
+  }
+
+  async function onOAuthSignIn(provider: 'google' | 'azure') {
+    const { data, error } = await supabase.auth.signInWithOAuth({
+      provider: provider === 'azure' ? 'azure' : 'google',
+      options: {
+        redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(callbackUrl)}`,
+      },
+    });
+
+    if (error) {
+      alert(error.message);
     }
   }
 
@@ -64,14 +79,14 @@ export default function SignInPage() {
           {/* SSO Buttons */}
           <div className="grid gap-3">
             <button 
-              onClick={() => signIn("google", { callbackUrl })}
+              onClick={() => onOAuthSignIn('google')}
               className="flex w-full items-center justify-center gap-3 p-4 rounded-xl bg-slate-800/50 border border-slate-600/50 text-white hover:bg-slate-700/50 transition-all duration-300 hover:border-slate-500"
             >
               <Image src="/images/google-logo.svg" alt="Google" width={20} height={20} />
               Continue with Google
             </button>
             <button 
-              onClick={() => signIn("azure-ad", { callbackUrl })}
+              onClick={() => onOAuthSignIn('azure')}
               className="flex w-full items-center justify-center gap-3 p-4 rounded-xl bg-slate-800/50 border border-slate-600/50 text-white hover:bg-slate-700/50 transition-all duration-300 hover:border-slate-500"
             >
               <Image src="/images/microsoft-logo.svg" alt="Microsoft" width={20} height={20} />

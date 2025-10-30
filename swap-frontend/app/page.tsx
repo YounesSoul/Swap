@@ -1,14 +1,14 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useSession } from "next-auth/react";
+import { useSupabaseAuth } from "@/components/SupabaseAuthProvider";
 import { Button } from "@/components/ui/button";
 import { Suspense } from 'react';
 import EnhancedLandingNav from '@/components/EnhancedLandingNav';
 
 export default function HomePage() {
   const router = useRouter();
-  const { status } = useSession();
+  const { user, loading } = useSupabaseAuth();
 
   const toCreateAccount = () =>
     router.push(`/register?callbackUrl=${encodeURIComponent("/onboarding")}`);
@@ -64,7 +64,7 @@ export default function HomePage() {
             </div>
 
             <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
-              {status === "authenticated" ? (
+              {user ? (
                 <button
                   onClick={toDashboard}
                   className="group relative px-8 py-4 bg-gradient-to-r from-cyan-500 to-blue-600 text-white font-semibold rounded-xl text-lg transition-all duration-300 hover:shadow-lg hover:shadow-cyan-500/25 hover:-translate-y-1"

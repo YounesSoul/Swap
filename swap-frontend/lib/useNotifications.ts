@@ -19,12 +19,12 @@ export const useNotificationCounts = (): NotificationCounts => {
     console.log('useNotificationCounts - sessions:', sessions);
 
     // Count pending requests in inbox
-    const pendingRequests = inbox.filter(request => 
+    const pendingRequests = (Array.isArray(inbox) ? inbox : []).filter(request => 
       request.status === 'PENDING'
     ).length;
 
     // Count upcoming sessions that need attention
-    const upcomingSessions = sessions.filter(session => {
+    const upcomingSessions = (Array.isArray(sessions) ? sessions : []).filter(session => {
       if (session.status === 'done') return false;
       
       // If no start time is set, it needs scheduling

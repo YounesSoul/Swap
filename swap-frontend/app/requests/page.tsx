@@ -3,10 +3,11 @@
 
 import React, { useState } from "react";
 import { useSwap } from "@/lib/store";
-import { ChromaGrid } from "@/components/ui/enhanced-components";
 import { RequestCard } from "@/components/requests/RequestCard";
-import { RequestStatsCarousel } from "@/components/requests/RequestStatsCarousel";
+import { SimpleRequestStats } from "@/components/requests/SimpleRequestStats";
 import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
+import Link from "next/link";
 
 export default function RequestsPage() {
   const { inbox, sent, acceptRequest, declineRequest, clearAnsweredRequests, clearAllRequests, me } = useSwap(s => ({
@@ -87,41 +88,36 @@ export default function RequestsPage() {
   const filteredSent = filterRequests(sent);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50">
-      {/* Background Effects */}
-      <ChromaGrid className="absolute inset-0 opacity-10">
-        <div></div>
-      </ChromaGrid>
-
-      <div className="relative z-10 container mx-auto px-6 py-8 space-y-8">
+    <div className="min-h-screen bg-gray-50 pb-12">
+      <div className="container mx-auto px-6 py-8 max-w-7xl space-y-6">
         {/* Header */}
-        <div className="text-center space-y-3">
-          <h1 className="text-3xl font-bold text-gray-900">Request Management</h1>
-          <p className="text-gray-600">Manage your tutoring requests and track their status</p>
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 max-w-md mx-auto">
-            <p className="text-sm text-blue-700">
-              💡 Want to book a new session? Head to the{" "}
-              <a href="/matches" className="font-medium underline hover:text-blue-800">
-                Search page
-              </a>{" "}
-              to find teachers and send requests directly!
+        <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
+          <h1 className="text-2xl font-bold text-gray-900 mb-2">Request Management</h1>
+          <p className="text-gray-500 text-sm font-medium mb-4">Manage your tutoring requests and track their status</p>
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+            <p className="text-sm text-blue-700 font-medium">
+              💡 Want to book a new session?{" "}
+              <Link href="/matches" className="font-semibold underline hover:text-blue-800">
+                Search for teachers
+              </Link>{" "}
+              and send requests directly!
             </p>
           </div>
         </div>
 
-        {/* Stats Carousel */}
-        <RequestStatsCarousel stats={stats} onQuickAction={handleQuickAction} />
+        {/* Stats Overview */}
+        <SimpleRequestStats stats={stats} onQuickAction={handleQuickAction} />
 
         {/* Filter Pills */}
-        <div className="flex justify-center space-x-2">
+        <div className="flex justify-center gap-2">
           {["all", "pending", "accepted", "declined"].map((filter) => (
             <button
               key={filter}
               onClick={() => setActiveFilter(filter)}
-              className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
+              className={`px-4 py-2 rounded-lg text-sm font-semibold transition-colors ${
                 activeFilter === filter
-                  ? "bg-blue-500 text-white"
-                  : "bg-white text-gray-600 hover:bg-gray-100"
+                  ? "bg-blue-600 text-white shadow-sm"
+                  : "bg-white text-gray-600 hover:bg-gray-50 border border-gray-200"
               }`}
             >
               {filter.charAt(0).toUpperCase() + filter.slice(1)}
@@ -129,34 +125,34 @@ export default function RequestsPage() {
           ))}
         </div>
 
-        {/* Clear Answered Requests Button */}
-        <div className="flex justify-center">
-          <button
+        {/* Action Buttons */}
+        <div className="flex justify-center gap-3">
+          <Button
             onClick={handleClearAnswered}
-            className="px-6 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-lg text-sm font-medium transition-colors flex items-center space-x-2"
+            variant="outline"
+            className="font-semibold"
           >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-            </svg>
-            <span>Clear Answered Requests</span>
-          </button>
+            Clear Answered Requests
+          </Button>
         </div>
 
         {/* Requests Grid */}
-        <div className="grid gap-8 lg:grid-cols-2">
+        <div className="grid gap-6 lg:grid-cols-2">
           {/* Inbox */}
           <div className="space-y-4">
-            <h2 className="text-xl font-semibold text-gray-900 flex items-center space-x-2">
-              <span>Inbox</span>
-              <span className="bg-blue-100 text-blue-800 text-sm px-2 py-1 rounded-full">
-                {filteredInbox.length}
-              </span>
-            </h2>
+            <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-4">
+              <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2">
+                <span>Inbox</span>
+                <span className="bg-blue-100 text-blue-600 text-sm font-semibold px-3 py-1 rounded-full">
+                  {filteredInbox.length}
+                </span>
+              </h2>
+            </div>
             
             {filteredInbox.length === 0 ? (
-              <div className="text-center py-12 text-gray-500">
-                <div className="text-4xl mb-4">📬</div>
-                <p>No incoming requests found</p>
+              <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-12 text-center">
+                <div className="text-4xl mb-3">📬</div>
+                <p className="text-gray-400 font-medium">No incoming requests found</p>
               </div>
             ) : (
               <div className="space-y-4">
@@ -175,17 +171,19 @@ export default function RequestsPage() {
 
           {/* Sent */}
           <div className="space-y-4">
-            <h2 className="text-xl font-semibold text-gray-900 flex items-center space-x-2">
-              <span>Sent</span>
-              <span className="bg-purple-100 text-purple-800 text-sm px-2 py-1 rounded-full">
-                {filteredSent.length}
-              </span>
-            </h2>
+            <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-4">
+              <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2">
+                <span>Sent</span>
+                <span className="bg-purple-100 text-purple-600 text-sm font-semibold px-3 py-1 rounded-full">
+                  {filteredSent.length}
+                </span>
+              </h2>
+            </div>
             
             {filteredSent.length === 0 ? (
-              <div className="text-center py-12 text-gray-500">
-                <div className="text-4xl mb-4">📤</div>
-                <p>No sent requests found</p>
+              <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-12 text-center">
+                <div className="text-4xl mb-3">📤</div>
+                <p className="text-gray-400 font-medium">No sent requests found</p>
               </div>
             ) : (
               <div className="space-y-4">
@@ -201,29 +199,24 @@ export default function RequestsPage() {
           </div>
         </div>
 
-        {/* Admin Actions - Discrete placement at bottom */}
-        <div className="mt-12 pt-8 border-t border-gray-200">
+        {/* Admin Actions */}
+        <div className="mt-8 pt-8 border-t border-gray-200">
           <details className="max-w-md mx-auto">
-            <summary className="cursor-pointer text-sm text-gray-500 hover:text-gray-700 flex items-center justify-center space-x-2">
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-              </svg>
+            <summary className="cursor-pointer text-sm text-gray-500 hover:text-gray-700 font-medium flex items-center justify-center gap-2">
+              <span>⚙️</span>
               <span>Advanced Actions</span>
             </summary>
-            <div className="mt-4 p-4 bg-gray-50 rounded-lg">
-              <p className="text-xs text-gray-600 mb-3">
+            <div className="mt-4 bg-white rounded-2xl border border-gray-200 shadow-sm p-4">
+              <p className="text-xs text-gray-500 font-medium mb-3">
                 ⚠️ Use with caution - these actions cannot be undone
               </p>
-              <button
+              <Button
                 onClick={handleClearAll}
-                className="w-full px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg text-sm font-medium transition-colors flex items-center justify-center space-x-2"
+                variant="outline"
+                className="w-full font-semibold text-red-600 border-red-200 hover:bg-red-50"
               >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                </svg>
-                <span>Clear ALL Requests (Including Pending)</span>
-              </button>
+                Clear ALL Requests
+              </Button>
             </div>
           </details>
         </div>

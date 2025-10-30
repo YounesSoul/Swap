@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { useSession } from "next-auth/react";
+import { useSupabaseAuth } from "@/components/SupabaseAuthProvider";
 import { ensureThread, listThreads, listMessages, sendMessage } from "@/lib/api";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -21,8 +21,8 @@ const initials = (nameOrEmail?: string | null) =>
     .join("") || "ST";
 
 export default function ChatPage() {
-  const { data: session } = useSession();
-  const meEmail = session?.user?.email || "";
+  const { user } = useSupabaseAuth();
+  const meEmail = user?.email || "";
   const sp = useSearchParams();
   const withEmailParam = sp.get("with");
 

@@ -1,7 +1,9 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
+import ReactDOM from "react-dom";
 import { gsap } from "gsap";
+import { toast } from "sonner";
 import { 
   Calendar, 
   Clock, 
@@ -130,10 +132,10 @@ export const SchedulingModal: React.FC<SchedulingModalProps> = ({
 
   if (!isOpen) return null;
 
-  return (
+  const modalContent = (
     <div 
       ref={modalRef}
-      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      className="fixed inset-0 z-[9999] flex items-center justify-center p-4"
     >
       {/* Overlay */}
       <div 
@@ -283,6 +285,8 @@ export const SchedulingModal: React.FC<SchedulingModalProps> = ({
       </div>
     </div>
   );
+
+  return ReactDOM.createPortal(modalContent, document.body);
 };
 
 export default SchedulingModal;

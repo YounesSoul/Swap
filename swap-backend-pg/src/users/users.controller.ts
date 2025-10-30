@@ -28,6 +28,14 @@ class CourseDto {
   grade?: string; // e.g., "A" | "A+"
 }
 
+class InterestDto {
+  @IsString()
+  type!: 'skill' | 'course';
+
+  @IsString()
+  name!: string;
+}
+
 class OnboardDto {
   @IsEmail()
   email!: string;
@@ -45,6 +53,12 @@ class OnboardDto {
   @ValidateNested({ each: true })
   @Type(() => CourseDto)
   courses!: CourseDto[];
+
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => InterestDto)
+  interests?: InterestDto[];
 }
 
 // Simple body DTOs for mutations
@@ -128,11 +142,16 @@ export class UsersController {
       code: c.code,
       grade: c.grade || 'A',
     }));
+    const interests = (dto.interests || []).map((i) => ({
+      type: i.type,
+      name: i.name,
+    }));
     return this.users.onboarding({
       email: dto.email,
       name: dto.name,
       skills,
       courses,
+      interests,
     });
   }
 

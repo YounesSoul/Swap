@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { useSession } from "next-auth/react";
+import { useSupabaseAuth } from "@/components/SupabaseAuthProvider";
 import { toast } from "sonner";
 import { useSwap } from "@/lib/store";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -26,7 +26,7 @@ type TranscriptResult = {
 };
 
 export default function TranscriptUploader() {
-  const { data: session } = useSession();
+  const { user } = useSupabaseAuth();
   const seed = useSwap(s => s.seed);
   const [file, setFile] = useState<File | null>(null);
   const [busy, setBusy] = useState(false);
@@ -36,7 +36,7 @@ export default function TranscriptUploader() {
   const [addingCourses, setAddingCourses] = useState(false);
   async function upload() {
     if (!file) return;
-    if (!session?.user?.email) {
+    if (!user?.email) {
       toast.error("Please log in first");
       return;
     }
@@ -44,7 +44,7 @@ export default function TranscriptUploader() {
       setBusy(true);
       const form = new FormData();
       form.append("file", file);
-      form.append("email", session.user.email);
+      form.append("email", user.email);
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/transcripts/ingest`, { method: "POST", body: form });
       const data = await res.json();
       if (!res.ok || !data.ok) {
@@ -69,7 +69,7 @@ export default function TranscriptUploader() {
   }
 
   async function addSelectedCoursesToProfile() {
-    if (!session?.user?.email || selectedCourses.size === 0) return;
+    if (!user?.email || selectedCourses.size === 0) return;
     
     const coursesToAdd = result?.eligibleCourses
       ?.filter(c => selectedCourses.has(c.code))
@@ -80,7 +80,7 @@ export default function TranscriptUploader() {
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/transcripts/add-selected-courses`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: session.user.email, courses: coursesToAdd }),
+        body: JSON.stringify({ email: user.email, courses: coursesToAdd }),
       });
       
       const data = await res.json();
@@ -88,7 +88,7 @@ export default function TranscriptUploader() {
         toast.error(data?.message || "Failed to add courses");
       } else {
         toast.success(`Added ${data.added} courses, updated ${data.updated}`);
-        await seed(session.user.email);
+        await seed(user.email);
         setShowResume(false);
         setSelectedCourses(new Set());
       }
@@ -141,7 +141,7 @@ export default function TranscriptUploader() {
             accept="application/pdf"
             onChange={(e) => setFile(e.target.files?.[0] ?? null)}
           />
-          <Button onClick={upload} disabled={!file || busy}>
+          <Button type="button" onClick={upload} disabled={!file || busy}>
             {busy ? "Processing…" : "Upload & scan"}
           </Button>
         </div>
@@ -303,12 +303,13 @@ export default function TranscriptUploader() {
                   {selectedCourses.size} course{selectedCourses.size !== 1 ? 's' : ''} selected
                 </div>
                 <div className="flex gap-2">
-                  <Button variant="outline" onClick={() => setShowResume(false)}>
+                  <Button variant="outline" onClick={() => setShowResume(false)} type="button">
                     Cancel
                   </Button>
                   <Button 
                     onClick={addSelectedCoursesToProfile}
                     disabled={selectedCourses.size === 0 || addingCourses}
+                    type="button"
                   >
                     {addingCourses ? "Adding..." : `Add ${selectedCourses.size} Course${selectedCourses.size !== 1 ? 's' : ''}`}
                   </Button>

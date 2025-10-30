@@ -10,6 +10,7 @@ class CreateRequestDto {
   @IsString() courseCode!: string;
   @Type(() => Number) @IsInt() @Min(15) minutes!: number;
   @IsOptional() @IsString() note?: string;
+  @IsOptional() @IsString() timeSlotId?: string;
 }
 
 class ActDto { @IsEmail() actingEmail!: string; }
@@ -17,7 +18,7 @@ class ActDto { @IsEmail() actingEmail!: string; }
 @Controller('requests')
 export class RequestsController {
   constructor(private reqs: RequestsService) {}
-  @Post() create(@Body() dto: CreateRequestDto) { return this.reqs.create(dto.fromEmail, dto.toEmail, dto.courseCode, dto.minutes, dto.note); }
+  @Post() create(@Body() dto: CreateRequestDto) { return this.reqs.create(dto.fromEmail, dto.toEmail, dto.courseCode, dto.minutes, dto.note, dto.timeSlotId); }
   @Get() list(@Query() q: any) {
     if (q.inbox && q.email) return this.reqs.inbox(q.email);
     if (q.sent && q.email) return this.reqs.sent(q.email);

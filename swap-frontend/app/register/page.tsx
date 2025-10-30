@@ -2,9 +2,10 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { signIn } from "next-auth/react";
+import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { toast } from "sonner";
 import Image from "next/image";
 import Link from "next/link";
 
@@ -17,32 +18,47 @@ export default function RegisterPage() {
   const [pw2, setPw2] = useState("");
   const [loading, setLoading] = useState(false);
   const router = useRouter();
+  const supabase = createClient();
 
   async function onRegister(e: React.FormEvent) {
     e.preventDefault();
     if (pw1 !== pw2) return alert("Passwords do not match");
+    
     setLoading(true);
-    const res = await fetch("/api/auth/register", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        email, password: pw1,
-        firstName, lastName,
-        dateOfBirth: dob || undefined,
-      }),
+    
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password: pw1,
+      options: {
+        data: {
+          first_name: firstName,
+          last_name: lastName,
+          date_of_birth: dob || undefined,
+          full_name: `${firstName} ${lastName}`.trim(),
+        },
+        emailRedirectTo: `${window.location.origin}/auth/callback?next=/onboarding`,
+      },
     });
-    setLoading(false);
-    const data = await res.json();
-    if (!res.ok) return alert(data?.error || "Could not register");
 
-    const s = await signIn("credentials", { 
-      email, 
-      password: pw1, 
-      redirect: false, 
-      callbackUrl: "/onboarding" 
-    });
-    if (s?.ok) router.push("/onboarding");
-    else router.push("/signin");
+    setLoading(false);
+
+    if (error) {
+      return toast.error(error.message || "Could not register");
+    }
+
+    // Check if user needs to confirm email or is already signed in
+    if (data?.user && data?.session) {
+      // User is signed in immediately (email confirmation disabled)
+      toast.success("Registration successful! Welcome to Swap!");
+      router.push("/onboarding");
+    } else if (data?.user && !data?.session) {
+      // User needs to confirm email
+      toast.success("Registration successful! Please check your email to confirm your account.");
+      router.push("/signin");
+    } else {
+      toast.success("Registration successful! You can now sign in.");
+      router.push("/signin");
+    }
   }
 
   return (

@@ -1,12 +1,12 @@
 "use client";
-import { SessionProvider } from "next-auth/react";
+import { SupabaseAuthProvider } from "./SupabaseAuthProvider";
 import { Toaster } from "sonner";
 
 export default function Providers({ children }: { children: React.ReactNode }) {
   return (
-    <SessionProvider>
+    <SupabaseAuthProvider>
       {children}
       <Toaster position="top-right" richColors closeButton />
-    </SessionProvider>
+    </SupabaseAuthProvider>
   );
 }

@@ -1,5 +1,5 @@
 'use client';
-import { useSession } from 'next-auth/react';
+import { useSupabaseAuth } from '@/components/SupabaseAuthProvider';
 import { useEffect, useState } from 'react';
 import { getUserRatingStats, getUserRatings, createRating } from '@/lib/rating-service';
 import { RatingSummary, ReviewCard, RatingComponent } from '@/components/ui/rating-components';
@@ -14,7 +14,7 @@ interface User {
 }
 
 export default function RatingTestPage() {
-  const { data: session } = useSession();
+  const { user: authUser } = useSupabaseAuth();
   const [user, setUser] = useState<User | null>(null);
   const [ratingStats, setRatingStats] = useState<RatingStats | null>(null);
   const [reviews, setReviews] = useState<UserRating[]>([]);
@@ -27,7 +27,7 @@ export default function RatingTestPage() {
     const mockUser: User = {
       id: '1',
       name: 'John Doe',
-      email: session?.user?.email || 'john@example.com',
+      email: authUser?.email || 'john@example.com',
       skills: [
         { name: 'React', level: 'ADVANCED' },
         { name: 'TypeScript', level: 'INTERMEDIATE' },
@@ -40,7 +40,7 @@ export default function RatingTestPage() {
       ]
     };
     setUser(mockUser);
-  }, [session]);
+  }, [authUser]);
 
   // Load rating data
   useEffect(() => {
@@ -66,7 +66,7 @@ export default function RatingTestPage() {
   }, [user]);
 
   const handleTestRating = async () => {
-    if (!user || !session?.user?.email || testRating === 0) return;
+    if (!user || !authUser?.email || testRating === 0) return;
 
     try {
       const result = await createRating({

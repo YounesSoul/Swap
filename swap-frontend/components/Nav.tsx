@@ -15,13 +15,13 @@ import {
   PlusCircle,
   Star,
 } from "lucide-react";
-import { useSession, signOut } from "next-auth/react";
+import { useSupabaseAuth } from "@/components/SupabaseAuthProvider";
 import { NotificationBadge } from "@/components/ui/notification-badge";
 import { useNotificationCounts } from "@/lib/useNotifications";
 
 const items = [
   { href: "/dashboard", icon: Home, label: "Dashboard" },
-  { href: "/matches", icon: Search, label: "Matches" },
+  { href: "/matches", icon: PlusCircle, label: "Find a Swap" }, // Changed from Search/Matches
   { href: "/requests", icon: Inbox, label: "Requests" },
   { href: "/sessions", icon: Calendar, label: "Sessions" },
   { href: "/chat", icon: MessageSquare, label: "Chat" },
@@ -31,8 +31,8 @@ const items = [
 
 export default function Navigation() {
   const pathname = usePathname();
-  const { data: session } = useSession();
-  const isAuthed = !!session;
+  const { user, signOut } = useSupabaseAuth();
+  const isAuthed = !!user;
   const notificationCounts = useNotificationCounts();
 
   // Debug logging
@@ -106,19 +106,12 @@ export default function Navigation() {
         <div className="flex items-center gap-3">
           {isAuthed ? (
             <>
-              {/* Find a Swap Button */}
-              <Link
-                href="/matches"
-                className="group relative flex items-center gap-2 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 px-4 py-2.5 text-sm font-semibold text-white shadow-lg transition-all duration-300 hover:shadow-cyan-500/25 hover:-translate-y-0.5"
-              >
-                <PlusCircle className="h-4 w-4" />
-                <span className="hidden sm:block">Find a Swap</span>
-                <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-cyan-400 to-blue-500 opacity-0 group-hover:opacity-100 transition-opacity duration-300 -z-10 blur-xl"></div>
-              </Link>
-
               {/* Sign Out Button */}
               <button
-                onClick={() => signOut({ callbackUrl: "/" })}
+                onClick={async () => {
+                  await signOut();
+                  window.location.href = '/';
+                }}
                 className="flex items-center gap-2 rounded-xl px-3 py-2.5 text-sm font-medium text-slate-300 hover:bg-slate-800/50 hover:text-white transition-all duration-300"
               >
                 <LogOut className="h-4 w-4" />

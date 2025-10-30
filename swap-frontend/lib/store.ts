@@ -70,6 +70,7 @@ type State = {
   onboarded: boolean;
   mySkills: string[];
   myCourses: { courseCode: string; grade: string }[];
+  myInterests: Array<{type: 'skill' | 'course', name: string}>; // Learning interests
 
   inbox: RequestItem[];
   sent: RequestItem[];
@@ -91,7 +92,12 @@ type State = {
   clearAllRequests: () => Promise<void>;
   completeSession: (id: string) => Promise<void>;
   scheduleSession: (id: string, startAtISO: string) => Promise<void>;
-  saveOnboarding: (name: string | undefined, skills: string[], courses: string[]) => Promise<boolean>;
+  saveOnboarding: (
+    name: string | undefined, 
+    skills: string[], 
+    courses: string[],
+    interests?: Array<{type: 'skill' | 'course', name: string}>
+  ) => Promise<boolean>;
   searchTeachers: (opts: { skill?: string; course?: string }) => Promise<void>;
    addSkill: (name: string, level?: "BEGINNER"|"INTERMEDIATE"|"ADVANCED"|"EXPERT") => Promise<void>;
   removeSkill: (name: string) => Promise<void>;
@@ -106,6 +112,7 @@ export const useSwap = create<State>((set, get) => ({
   onboarded: true,
   mySkills: [],
   myCourses: [],
+  myInterests: [], // Initialize empty interests
 
   inbox: [],
   sent: [],
@@ -134,6 +141,7 @@ export const useSwap = create<State>((set, get) => ({
       onboarded: !!profile?.isOnboarded,
       mySkills: (profile?.userSkills || []).map((us: any) => us.skill?.name).filter(Boolean),
       myCourses: (profile?.userCourses || []).map((c: any) => ({ courseCode: c.courseCode, grade: c.grade })),
+      myInterests: (profile?.userInterests || []).map((i: any) => ({ type: i.type, name: i.name })),
 
       // existing data
       inbox: inbox || [],
@@ -269,11 +277,11 @@ export const useSwap = create<State>((set, get) => ({
     setupSessionReminders(sSessions);
   },
 
-  //save onboarding (skills + A-grade courses)
-  saveOnboarding: async (name, skills, courses) => {
+  //save onboarding (skills + A-grade courses + interests)
+  saveOnboarding: async (name, skills, courses, interests) => {
     const me = get().me;
     if (!me) return false;
-    const res = await apiSaveOnboarding(me.email, name, skills, courses);
+    const res = await apiSaveOnboarding(me.email, name, skills, courses, interests);
     if (res.ok) {
       await get().seed(me.email);
       return true;

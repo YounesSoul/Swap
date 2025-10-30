@@ -15,15 +15,27 @@ export class UsersService {
     timezone?: string,
     image?: string,
   ) {
-    return this.prisma.user.upsert({
-      where: { email },
-      update: { name, university, timezone, image },
-      create: {
-        email, name, university, timezone, image,
-        // initial token
-        tokenLedger: { create: { tokens: 1, reason: 'initial_grant' } },
-      },
-    });
+    try {
+      return await this.prisma.user.upsert({
+        where: { email },
+        update: { name, university, timezone, image },
+        create: {
+          email, name, university, timezone, image,
+          // initial token
+          tokenLedger: { create: { tokens: 1, reason: 'initial_grant' } },
+        },
+      });
+    } catch (error: any) {
+      // Handle race condition - user might have been created between check and create
+      if (error.code === 'P2002') {
+        // Unique constraint violation, try to update instead
+        return await this.prisma.user.update({
+          where: { email },
+          data: { name, university, timezone, image },
+        });
+      }
+      throw error;
+    }
   }
 
   async findByEmail(email: string) {
@@ -36,6 +48,7 @@ export class UsersService {
       include: {
         userSkills: { include: { skill: true } },
         userCourses: true,
+        userInterests: true, // Include learning interests
       },
     });
   }
@@ -45,8 +58,9 @@ export class UsersService {
     name?: string;
     skills: { name: string; level?: SkillLevel }[];
     courses: { code: string; grade?: string }[];
+    interests?: { type: 'skill' | 'course'; name: string }[];
   }) {
-    const { email, name, skills, courses } = params;
+    const { email, name, skills, courses, interests } = params;
 
     return this.prisma.$transaction(async (tx) => {
       // Check if user exists and their current state
@@ -115,6 +129,27 @@ export class UsersService {
           update: { grade },
           create: { userId: user.id, courseCode: code, grade },
         });
+      }
+
+      // Save user interests (learning goals)
+      if (interests && interests.length > 0) {
+        for (const interest of interests) {
+          await tx.userInterest.upsert({
+            where: { 
+              userId_type_name: { 
+                userId: user.id, 
+                type: interest.type, 
+                name: interest.name 
+              } 
+            },
+            update: {},
+            create: { 
+              userId: user.id, 
+              type: interest.type, 
+              name: interest.name 
+            },
+          });
+        }
       }
 
       await tx.user.update({ where: { id: user.id }, data: { isOnboarded: true } });

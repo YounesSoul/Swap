@@ -1,4 +1,17 @@
+import { updateSession } from '@/lib/supabase/middleware'
 
-import { withAuth } from 'next-auth/middleware';
-export default withAuth({ callbacks: { authorized: ({ token }) => !!token } });
-export const config = { matcher: ['/dashboard/:path*','/matches/:path*','/courses/:path*','/requests/:path*','/sessions/:path*','/chat/:path*','/profile/:path*'] };
+export async function middleware(request: any) {
+  return await updateSession(request)
+}
+
+export const config = {
+  matcher: [
+    '/dashboard/:path*',
+    '/matches/:path*',
+    '/courses/:path*',
+    '/requests/:path*',
+    '/sessions/:path*',
+    '/chat/:path*',
+    '/profile/:path*',
+  ],
+}

@@ -122,25 +122,26 @@ const StatCard: React.FC<StatCardProps> = ({
                   cursor-pointer group min-h-[140px] flex flex-col justify-between`}
       onClick={onClick}
     >
-      <div className="flex items-center justify-between mb-4">
-        <div className={`p-3 rounded-xl bg-white/20 text-${color} group-hover:scale-110 transition-transform duration-300`}>
-          {icon}
-        </div>
-        <div className="flex flex-col items-end">
-          <div className={`text-2xl font-bold text-white mb-1`}>
+      <div className="mb-3">
+        <p className="text-xs font-semibold text-white/60 uppercase tracking-wider mb-2">
+          {title}
+        </p>
+      </div>
+      
+      <div className="flex items-end justify-between">
+        <div>
+          <div className="text-4xl font-bold text-white mb-1">
             {value}
           </div>
           {subtitle && (
-            <div className="text-xs text-white/80">
+            <div className="text-sm font-medium text-white/70">
               {subtitle}
             </div>
           )}
         </div>
-      </div>
-      <div>
-        <h3 className="text-sm font-semibold text-white/90 mb-1">
-          {title}
-        </h3>
+        <div className={`p-3 rounded-xl bg-white/20 text-white group-hover:scale-110 transition-transform duration-300`}>
+          {icon}
+        </div>
       </div>
       
       {/* Decorative elements */}
@@ -300,7 +301,7 @@ const StatsCustomizationModal: React.FC<StatsCustomizationModalProps> = ({
               <Button
                 onClick={handleSave}
                 disabled={tempSelection.length !== 4}
-                className="bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Save Changes
               </Button>
@@ -328,24 +329,31 @@ export const DashboardStatsCarousel: React.FC = () => {
 
   // Calculate comprehensive stats
   const stats = useMemo(() => {
+    // Ensure arrays are valid
+    const safeInbox = Array.isArray(inbox) ? inbox : [];
+    const safeSent = Array.isArray(sent) ? sent : [];
+    const safeSessions = Array.isArray(sessions) ? sessions : [];
+    const safeSkills = Array.isArray(mySkills) ? mySkills : [];
+    const safeCourses = Array.isArray(myCourses) ? myCourses : [];
+
     // Profile stats
-    const totalSkills = mySkills?.length || 0;
-    const totalCourses = myCourses?.length || 0;
+    const totalSkills = safeSkills.length;
+    const totalCourses = safeCourses.length;
     const profileFields = [me?.name, me?.email, totalSkills, totalCourses];
     const profileCompletion = Math.round((profileFields.filter(Boolean).length / profileFields.length) * 100);
 
     // Session stats
-    const completedSessions = sessions?.filter((s: any) => s.status === 'completed').length || 0;
-    const scheduledSessions = sessions?.filter((s: any) => s.status === 'scheduled').length || 0;
-    const totalSessions = sessions?.length || 0;
-    const totalMinutes = sessions?.reduce((acc: number, s: any) => acc + (s.minutes || 0), 0) || 0;
+    const completedSessions = safeSessions.filter((s: any) => s.status === 'completed').length;
+    const scheduledSessions = safeSessions.filter((s: any) => s.status === 'scheduled').length;
+    const totalSessions = safeSessions.length;
+    const totalMinutes = safeSessions.reduce((acc: number, s: any) => acc + (s.minutes || 0), 0);
     const totalHours = Math.floor(totalMinutes / 60);
 
     // Request stats
-    const inboxRequests = inbox?.filter((r: any) => r.status === 'PENDING').length || 0;
-    const sentRequests = sent?.length || 0;
-    const acceptedRequests = [...(inbox || []), ...(sent || [])].filter((r: any) => r.status === 'ACCEPTED').length || 0;
-    const totalRequests = (inbox?.length || 0) + (sent?.length || 0);
+    const inboxRequests = safeInbox.filter((r: any) => r.status === 'PENDING').length;
+    const sentRequests = safeSent.length;
+    const acceptedRequests = [...safeInbox, ...safeSent].filter((r: any) => r.status === 'ACCEPTED').length;
+    const totalRequests = safeInbox.length + safeSent.length;
 
     // Activity stats
     const thisWeekSessions = sessions?.filter((s: any) => {
@@ -388,8 +396,8 @@ export const DashboardStatsCarousel: React.FC = () => {
       getValue: (stats) => `${stats.totalHours}h`,
       getSubtitle: (stats) => `${stats.totalHours * 60 - (stats.totalHours * 60)} min`,
       icon: <Clock className="h-5 w-5" />,
-      color: "purple-400", 
-      bgGradient: "from-purple-500 to-purple-600",
+      color: "blue-400", 
+      bgGradient: "from-blue-600 to-blue-700",
     },
     {
       key: "skillsToTeach",
@@ -397,8 +405,8 @@ export const DashboardStatsCarousel: React.FC = () => {
       getValue: (stats) => stats.totalSkills,
       getSubtitle: () => "areas of expertise",
       icon: <GraduationCap className="h-5 w-5" />,
-      color: "emerald-400",
-      bgGradient: "from-emerald-500 to-emerald-600",
+      color: "gray-400",
+      bgGradient: "from-gray-700 to-gray-800",
     },
     {
       key: "coursesLearning",
@@ -406,8 +414,8 @@ export const DashboardStatsCarousel: React.FC = () => {
       getValue: (stats) => stats.totalCourses,
       getSubtitle: () => "active learning",
       icon: <BookOpen className="h-5 w-5" />,
-      color: "orange-400",
-      bgGradient: "from-orange-500 to-orange-600",
+      color: "blue-400",
+      bgGradient: "from-blue-500 to-blue-600",
     },
     {
       key: "profileComplete",
@@ -415,8 +423,8 @@ export const DashboardStatsCarousel: React.FC = () => {
       getValue: (stats) => `${stats.profileCompletion}%`,
       getSubtitle: () => "profile strength",
       icon: <User className="h-5 w-5" />,
-      color: "pink-400",
-      bgGradient: "from-pink-500 to-pink-600",
+      color: "gray-400",
+      bgGradient: "from-gray-600 to-gray-700",
     },
     {
       key: "pendingRequests",
@@ -424,8 +432,8 @@ export const DashboardStatsCarousel: React.FC = () => {
       getValue: (stats) => stats.inboxRequests,
       getSubtitle: (stats) => `${stats.sentRequests} sent`,
       icon: <Inbox className="h-5 w-5" />,
-      color: "indigo-400",
-      bgGradient: "from-indigo-500 to-indigo-600",
+      color: "blue-400",
+      bgGradient: "from-blue-600 to-blue-700",
     },
     {
       key: "thisWeek",
@@ -433,8 +441,8 @@ export const DashboardStatsCarousel: React.FC = () => {
       getValue: (stats) => stats.thisWeekSessions,
       getSubtitle: () => "sessions completed",
       icon: <Activity className="h-5 w-5" />,
-      color: "teal-400",
-      bgGradient: "from-teal-500 to-teal-600",
+      color: "blue-400",
+      bgGradient: "from-blue-500 to-blue-600",
     },
     {
       key: "successRate",
@@ -442,8 +450,8 @@ export const DashboardStatsCarousel: React.FC = () => {
       getValue: (stats) => stats.totalSessions > 0 ? `${Math.round((stats.completedSessions / stats.totalSessions) * 100)}%` : "0%",
       getSubtitle: () => "completion rate",
       icon: <TrendingUp className="h-5 w-5" />,
-      color: "green-400",
-      bgGradient: "from-green-500 to-green-600",
+      color: "blue-400",
+      bgGradient: "from-blue-600 to-blue-700",
     }
   ], []);
 

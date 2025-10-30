@@ -1,47 +1,45 @@
 "use client";
 
-import { MagicBento } from "@/components/ui/magic-bento";
 import { 
   WelcomeCard, 
   NextSessionCard, 
   BalanceCard, 
-  QuickActionsCard
+  QuickActionsCard,
+  PendingRequestsCard,
+  LatestSessionsCard,
+  ScheduleCalendarCard
 } from "@/components/dashboard/BentoCards";
-import { DashboardStatsCarousel } from "@/components/dashboard/DashboardStatsCarousel";
-import { EnhancedScheduleCard } from "@/components/dashboard/EnhancedScheduleCard";
+import { StatsOverview } from "@/components/dashboard/StatsOverview";
 
 export default function Dashboard(){
   return (
-    <div className="container mx-auto px-4 py-8 min-h-screen bg-gradient-to-br from-gray-50 to-white">
-      <MagicBento className="grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-        {/* Welcome Section - Full Width */}
-        <div className="col-span-full">
+    <div className="min-h-screen bg-gray-50 pb-12">
+      <div className="container mx-auto px-6 py-8 max-w-7xl">
+        {/* Welcome Header */}
+        <div className="mb-6">
           <WelcomeCard />
         </div>
         
-        {/* Stats Overview - Full Width */}
-        <div className="col-span-full">
-          <DashboardStatsCarousel />
+        {/* Stats Row - 4 cards */}
+        <div className="mb-6">
+          <StatsOverview />
         </div>
         
-        {/* Main Content Grid */}
-        <div className="md:col-span-1 lg:col-span-1">
+        {/* Main Content Grid - 2 columns */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+          {/* Left Column - Upcoming Sessions */}
           <NextSessionCard />
+          
+          {/* Right Column - Calendar */}
+          <ScheduleCalendarCard />
         </div>
         
-        <div className="md:col-span-1 lg:col-span-1">
-          <BalanceCard />
+        {/* Bottom Row - 2 cards */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <PendingRequestsCard />
+          <LatestSessionsCard />
         </div>
-        
-        <div className="md:col-span-2 lg:col-span-1 xl:col-span-2">
-          <QuickActionsCard />
-        </div>
-        
-        {/* Enhanced Schedule Section - Full Width */}
-        <div className="col-span-full">
-          <EnhancedScheduleCard />
-        </div>
-      </MagicBento>
+      </div>
     </div>
   );
 }

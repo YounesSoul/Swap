@@ -53,6 +53,18 @@ model UserCourse {
   @@unique([userId, courseCode])
 }
 
+model UserInterest {
+  id        String   @id @default(uuid())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String
+  type      String   // "skill" or "course"
+  name      String   // skill name or course code
+  createdAt DateTime @default(now())
+
+  @@unique([userId, type, name])
+  @@index([userId, type])
+}
+
 model User {
   id            String    @id @default(uuid())
   email         String    @unique
@@ -87,6 +99,7 @@ model User {
   isOnboarded Boolean      @default(false)
   userSkills  UserSkill[]
   userCourses UserCourse[]
+  userInterests UserInterest[] // Learning interests/goals
 
   transcriptIngests TranscriptIngest[]
 
@@ -97,6 +110,9 @@ model User {
   // Reports
   reportsMade     Report[] @relation("ReporterUser")
   reportsReceived Report[] @relation("ReportedUser")
+
+  // Availability
+  timeSlots TimeSlot[]
 }
 
 model Account {
@@ -148,6 +164,10 @@ model Request {
   sessionId String?  @unique
   session   Session? @relation("RequestToSession", fields: [sessionId], references: [id])
 
+  // Link to requested time slot (optional - for timeslot-based bookings)
+  timeSlot   TimeSlot? @relation(fields: [timeSlotId], references: [id])
+  timeSlotId String?
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -169,6 +189,10 @@ model Session {
   createdAt  DateTime       @default(now())
   ledger     CreditLedger[]
   tokens     TokenLedger[]
+
+  // Link to booked time slot
+  timeSlot   TimeSlot? @relation(fields: [timeSlotId], references: [id])
+  timeSlotId String?
 
   request Request? @relation("RequestToSession")
   ratings Rating[]
@@ -276,4 +300,46 @@ model Report {
   
   @@index([reportedId, status])
   @@index([createdAt])
+}
+
+//// TIME SLOTS (AVAILABILITY) ////
+
+enum DayOfWeek {
+  MONDAY
+  TUESDAY
+  WEDNESDAY
+  THURSDAY
+  FRIDAY
+  SATURDAY
+  SUNDAY
+}
+
+model TimeSlot {
+  id          String     @id @default(uuid())
+  teacher     User       @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+  teacherId   String
+  
+  // What is being taught
+  type        String     // "course" or "skill"
+  courseCode  String?    // if type = "course"
+  skillName   String?    // if type = "skill"
+  
+  // When (recurring weekly)
+  dayOfWeek   DayOfWeek
+  startTime   String     // HH:MM format (e.g., "14:00")
+  endTime     String     // HH:MM format (e.g., "16:00")
+  
+  // Status
+  isActive    Boolean    @default(true) // teacher can deactivate without deleting
+  
+  // Bookings
+  sessions    Session[]
+  requests    Request[]  // Requests for this time slot
+  
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  
+  @@index([teacherId, type, isActive])
+  @@index([type, courseCode])
+  @@index([type, skillName])
 }

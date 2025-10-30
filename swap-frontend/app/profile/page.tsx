@@ -2,13 +2,13 @@
 
 import React, { useEffect, useState } from "react";
 import { useSwap } from "@/lib/store";
-import { ProfileStatsCarousel } from "@/components/profile/ProfileStatsCarousel";
+import { SimpleProfileStats } from "@/components/profile/SimpleProfileStats";
 import { ProfileHeader } from "@/components/profile/ProfileHeader";
 import { SkillsManager, CoursesManager } from "@/components/profile/SkillsCoursesManager";
-import { GlowCard } from "@/components/ui/enhanced-components";
 import { toast } from "sonner";
 import TranscriptUploader from "./TranscriptUploader";
 import PasswordCard from "./PasswordCard";
+import AvailabilityManager from "@/components/profile/AvailabilityManager";
 
 export default function ProfilePage() {
   const me = useSwap((s) => s.me);
@@ -94,70 +94,55 @@ export default function ProfilePage() {
   }
 
   return (
-    <div className="space-y-8 p-6">
-      {/* Profile Header */}
-      <ProfileHeader 
-        user={{
-          name: profileData.name,
-          email: me.email,
-          university: profileData.university,
-          timezone: profileData.timezone,
-        }}
-        onUpdateProfile={handleUpdateProfile}
-      />
+    <div className="min-h-screen bg-gray-50 pb-12">
+      <div className="container mx-auto px-6 py-8 max-w-7xl space-y-6">
+        {/* Profile Header */}
+        <ProfileHeader 
+          user={{
+            name: profileData.name,
+            email: me.email,
+            university: profileData.university,
+            timezone: profileData.timezone,
+          }}
+          onUpdateProfile={handleUpdateProfile}
+        />
 
-      {/* Stats Carousel */}
-      <ProfileStatsCarousel stats={stats} />
+        {/* Stats Overview */}
+        <SimpleProfileStats stats={stats} />
 
-      {/* Main Content Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Left Column - Skills and Courses */}
-        <div className="lg:col-span-2 space-y-8">
-          {/* Skills Manager */}
-          <SkillsManager
-            skills={mySkills}
-            onAddSkill={handleAddSkill}
-            onRemoveSkill={handleRemoveSkill}
-          />
+        {/* Two Column Layout */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
+          {/* Left Column */}
+          <div className="space-y-6 flex flex-col">
+            {/* Skills Manager */}
+            <SkillsManager
+              skills={mySkills}
+              onAddSkill={handleAddSkill}
+              onRemoveSkill={handleRemoveSkill}
+            />
 
-          {/* Courses Manager */}
-          <CoursesManager
-            courses={myCourses}
-            onAddCourse={handleAddCourse}
-            onRemoveCourse={handleRemoveCourse}
-          />
-        </div>
+            {/* Courses Manager */}
+            <CoursesManager
+              courses={myCourses}
+              onAddCourse={handleAddCourse}
+              onRemoveCourse={handleRemoveCourse}
+            />
+          </div>
 
-        {/* Right Column - Sidebar */}
-        <div className="space-y-6">
-          {/* Transcript Uploader */}
-          <GlowCard className="p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">Add courses from transcript</h3>
-            <p className="text-sm text-gray-600 mb-4">
-              Upload your transcript (PDF) to automatically extract and add courses with A/A+ grades.
-            </p>
-            <TranscriptUploader />
-          </GlowCard>
+          {/* Right Column */}
+          <div className="space-y-6 flex flex-col">
+            {/* Availability Manager */}
+            <AvailabilityManager />
 
-          {/* Security Card */}
-          <GlowCard className="p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">Security</h3>
-            <p className="text-sm text-gray-600 mb-4">
-              Manage your account security and password settings.
-            </p>
-            <PasswordCard hasPassword={false} />
-          </GlowCard>
-
-          {/* Profile Tips */}
-          <GlowCard className="p-6 bg-gradient-to-br from-blue-50 to-indigo-50 border-blue-200">
-            <h3 className="text-lg font-semibold text-blue-900 mb-2">Profile Tips</h3>
-            <div className="space-y-2 text-sm text-blue-800">
-              <p>• Add at least 3 skills to increase your visibility</p>
-              <p>• Upload your transcript to showcase academic achievements</p>
-              <p>• Complete your profile to get better match recommendations</p>
-              <p>• Update your timezone for accurate session scheduling</p>
+            {/* Transcript Uploader */}
+            <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
+              <h3 className="text-lg font-bold text-gray-900 mb-2">Add courses from transcript</h3>
+              <p className="text-sm text-gray-500 font-medium mb-4">
+                Upload your transcript (PDF) to automatically extract and add courses with A/A+ grades.
+              </p>
+              <TranscriptUploader />
             </div>
-          </GlowCard>
+          </div>
         </div>
       </div>
     </div>

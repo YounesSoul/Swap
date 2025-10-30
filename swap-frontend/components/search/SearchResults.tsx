@@ -18,6 +18,7 @@ interface SearchResultCardProps {
   isMe: boolean;
   onMessage: () => void;
   onBook: () => void;
+  onBookTimeSlot: (timeSlotId: string, dayOfWeek: string, startTime: string, endTime: string) => void;
   isBooking: boolean;
 }
 
@@ -26,12 +27,28 @@ export const SearchResultCard: React.FC<SearchResultCardProps> = ({
   isMe,
   onMessage,
   onBook,
+  onBookTimeSlot,
   isBooking
 }) => {
   const label = (result.course?.code || (result.skills?.[0]?.name ?? "SKILL")).toString();
+  const timeSlots = result.timeSlots || [];
+  const hasAvailability = timeSlots.length > 0;
   
-  // Choose glow color based on type
-  const glowColor = result.skills ? "147, 51, 234" : "59, 130, 246"; // Purple for skills, Blue for courses
+  // Simple blue glow for all cards
+  const glowColor = "59, 130, 246"; // Blue
+
+  // Day order for sorting
+  const dayOrder: Record<string, number> = {
+    MONDAY: 1, TUESDAY: 2, WEDNESDAY: 3, THURSDAY: 4, 
+    FRIDAY: 5, SATURDAY: 6, SUNDAY: 7
+  };
+
+  // Sort and group time slots by day
+  const sortedSlots = [...timeSlots].sort((a, b) => {
+    const dayDiff = dayOrder[a.dayOfWeek] - dayOrder[b.dayOfWeek];
+    if (dayDiff !== 0) return dayDiff;
+    return a.startTime.localeCompare(b.startTime);
+  });
 
   return (
     <GlowCard glowColor={glowColor} className="p-6 hover:scale-[1.02] transition-transform duration-300">
@@ -39,8 +56,8 @@ export const SearchResultCard: React.FC<SearchResultCardProps> = ({
         {/* Header */}
         <div className="flex items-start justify-between">
           <div className="flex items-center space-x-3">
-            <div className="p-3 bg-gradient-to-br from-purple-100 to-blue-100 rounded-full">
-              <User className="w-6 h-6 text-purple-600" />
+            <div className="p-3 bg-blue-50 rounded-full">
+              <User className="w-6 h-6 text-blue-600" />
             </div>
             <div>
               <h3 className="font-semibold text-lg text-gray-900">
@@ -62,19 +79,14 @@ export const SearchResultCard: React.FC<SearchResultCardProps> = ({
           {result.skills && (
             <div className="space-y-2">
               <div className="flex items-center space-x-2">
-                <GraduationCap className="w-4 h-4 text-purple-600" />
+                <GraduationCap className="w-4 h-4 text-blue-600" />
                 <span className="text-sm font-medium text-gray-700">Skills</span>
               </div>
               <div className="flex flex-wrap gap-2">
                 {result.skills.map((skill: any, index: number) => (
                   <span
                     key={index}
-                    className={`px-3 py-1 rounded-full text-xs font-medium ${
-                      skill.level === 'EXPERT' ? 'bg-purple-100 text-purple-700' :
-                      skill.level === 'ADVANCED' ? 'bg-blue-100 text-blue-700' :
-                      skill.level === 'INTERMEDIATE' ? 'bg-green-100 text-green-700' :
-                      'bg-gray-100 text-gray-700'
-                    }`}
+                    className="px-3 py-1 bg-gray-100 text-gray-900 rounded-full text-xs font-medium border border-gray-200"
                   >
                     {skill.name} ({skill.level.toLowerCase()})
                   </span>
@@ -89,15 +101,11 @@ export const SearchResultCard: React.FC<SearchResultCardProps> = ({
                 <Award className="w-4 h-4 text-blue-600" />
                 <span className="text-sm font-medium text-gray-700">Course Excellence</span>
               </div>
-              <div className="flex items-center space-x-3 p-3 bg-blue-50 rounded-lg">
-                <div className="font-bold text-blue-900 text-lg">
+              <div className="flex items-center space-x-3 p-3 bg-blue-50 rounded-lg border border-blue-100">
+                <div className="font-bold text-gray-900 text-lg">
                   {result.course.code}
                 </div>
-                <div className={`px-2 py-1 rounded text-xs font-bold ${
-                  result.course.grade === 'A+' ? 'bg-green-100 text-green-800' :
-                  result.course.grade === 'A' ? 'bg-green-100 text-green-700' :
-                  'bg-blue-100 text-blue-700'
-                }`}>
+                <div className="px-2 py-1 bg-white border border-gray-200 rounded text-xs font-bold text-gray-900">
                   Grade: {result.course.grade}
                 </div>
               </div>
@@ -105,36 +113,82 @@ export const SearchResultCard: React.FC<SearchResultCardProps> = ({
           )}
         </div>
 
-        {/* Action Buttons */}
-        <div className="flex space-x-3 pt-2">
-          <Button
-            variant="outline"
-            disabled={isMe}
-            onClick={onMessage}
-            className="flex-1 flex items-center justify-center space-x-2 hover:bg-purple-50 hover:border-purple-300"
-          >
-            <MessageSquare className="w-4 h-4" />
-            <span>{isMe ? "That's you!" : "Message"}</span>
-          </Button>
+        {/* Available Time Slots */}
+        {hasAvailability && (
+          <div className="space-y-2">
+            <div className="flex items-center space-x-2">
+              <Clock className="w-4 h-4 text-blue-600" />
+              <span className="text-sm font-medium text-gray-700">Available Times</span>
+            </div>
+            <div className="grid grid-cols-1 gap-2 max-h-48 overflow-y-auto">
+              {sortedSlots.map((slot: any) => (
+                <button
+                  key={slot.id}
+                  onClick={() => onBookTimeSlot(slot.id, slot.dayOfWeek, slot.startTime, slot.endTime)}
+                  disabled={isMe || isBooking}
+                  className="flex items-center justify-between p-3 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 hover:border-blue-300 transition-all disabled:opacity-50 disabled:cursor-not-allowed group"
+                >
+                  <div className="flex items-center space-x-3">
+                    <div className="flex flex-col items-start">
+                      <span className="text-xs font-medium text-gray-600">
+                        {slot.dayOfWeek.charAt(0) + slot.dayOfWeek.slice(1).toLowerCase()}
+                      </span>
+                      <span className="text-sm font-semibold text-gray-900">
+                        {slot.startTime} - {slot.endTime}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Calendar className="w-4 h-4 text-blue-600 group-hover:scale-110 transition-transform" />
+                    <span className="text-xs font-medium text-blue-700">Book Now</span>
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
 
-          <Button
-            disabled={isMe || isBooking}
-            onClick={onBook}
-            className="flex-1 flex items-center justify-center space-x-2 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700"
-          >
-            {isBooking ? (
-              <>
-                <Clock className="w-4 h-4 animate-spin" />
-                <span>Booking...</span>
-              </>
-            ) : (
-              <>
-                <Calendar className="w-4 h-4" />
-                <span>Book Session</span>
-              </>
-            )}
-          </Button>
-        </div>
+        {/* Fallback: No availability message */}
+        {!hasAvailability && (
+          <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
+            <div className="flex items-center space-x-2">
+              <Clock className="w-4 h-4 text-red-600" />
+              <span className="text-sm text-red-800 font-medium">
+                No availabilities set by the teacher
+              </span>
+            </div>
+          </div>
+        )}
+
+        {/* Action Buttons - Only show message when no availability */}
+        {!hasAvailability && (
+          <div className="pt-2">
+            <Button
+              variant="outline"
+              disabled={isMe}
+              onClick={onMessage}
+              className="w-full flex items-center justify-center space-x-2 hover:bg-blue-50 hover:border-blue-300"
+            >
+              <MessageSquare className="w-4 h-4" />
+              <span>{isMe ? "That's you!" : "Send Message"}</span>
+            </Button>
+          </div>
+        )}
+
+        {/* Message button when availability exists */}
+        {hasAvailability && (
+          <div className="pt-2">
+            <Button
+              variant="outline"
+              disabled={isMe}
+              onClick={onMessage}
+              className="w-full flex items-center justify-center space-x-2 hover:bg-blue-50 hover:border-blue-300"
+            >
+              <MessageSquare className="w-4 h-4" />
+              <span>{isMe ? "That's you!" : "Send Message"}</span>
+            </Button>
+          </div>
+        )}
       </div>
     </GlowCard>
   );
@@ -153,8 +207,8 @@ export const EmptyState: React.FC<EmptyStateProps> = ({ mode, onSearch }) => {
   return (
     <div className="text-center py-12 space-y-6">
       <div className="space-y-3">
-        <div className="mx-auto w-16 h-16 bg-gradient-to-br from-purple-100 to-blue-100 rounded-full flex items-center justify-center">
-          <GraduationCap className="w-8 h-8 text-purple-600" />
+        <div className="mx-auto w-16 h-16 bg-blue-50 rounded-full flex items-center justify-center">
+          <GraduationCap className="w-8 h-8 text-blue-600" />
         </div>
         <h3 className="text-xl font-semibold text-gray-900">
           No results yet
@@ -174,7 +228,7 @@ export const EmptyState: React.FC<EmptyStateProps> = ({ mode, onSearch }) => {
             <button
               key={suggestion}
               onClick={() => onSearch(suggestion)}
-              className="px-4 py-2 bg-white border border-gray-200 rounded-full text-sm hover:bg-purple-50 hover:border-purple-300 transition-all duration-200 hover:scale-105"
+              className="px-4 py-2 bg-white border border-gray-200 rounded-full text-sm hover:bg-blue-50 hover:border-blue-300 transition-all duration-200 hover:scale-105"
             >
               {suggestion}
             </button>
@@ -190,6 +244,7 @@ interface SearchResultsGridProps {
   me: any;
   onMessage: (email: string) => void;
   onBook: (email: string, label: string) => void;
+  onBookTimeSlot: (email: string, timeSlotId: string, dayOfWeek: string, startTime: string, endTime: string) => void;
   bookingEmail: string | null;
   mode: "skill" | "course";
   searchQuery: string;
@@ -201,6 +256,7 @@ export const SearchResultsGrid: React.FC<SearchResultsGridProps> = ({
   me,
   onMessage,
   onBook,
+  onBookTimeSlot,
   bookingEmail,
   mode,
   searchQuery,
@@ -218,7 +274,7 @@ export const SearchResultsGrid: React.FC<SearchResultsGridProps> = ({
           Found {results.length} {mode === "skill" ? "teacher" : "student"}{results.length !== 1 ? "s" : ""}
         </h2>
         <div className="text-sm text-gray-500">
-          Searching for: <span className="font-medium text-purple-600">"{searchQuery}"</span>
+          Searching for: <span className="font-medium text-blue-600">"{searchQuery}"</span>
         </div>
       </div>
 
@@ -235,6 +291,9 @@ export const SearchResultsGrid: React.FC<SearchResultsGridProps> = ({
               isMe={isMe}
               onMessage={() => onMessage(result.user.email)}
               onBook={() => onBook(result.user.email, label)}
+              onBookTimeSlot={(timeSlotId, dayOfWeek, startTime, endTime) => 
+                onBookTimeSlot(result.user.email, timeSlotId, dayOfWeek, startTime, endTime)
+              }
               isBooking={bookingEmail === result.user.email}
             />
           );

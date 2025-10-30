@@ -1,7 +1,9 @@
 "use client";
 
 import React, { useState } from "react";
+import ReactDOM from "react-dom";
 import { Star, X } from "lucide-react";
+import { toast } from "sonner";
 import { useSwap } from "@/lib/store";
 
 interface RatingModalProps {
@@ -68,17 +70,16 @@ export const RatingModal: React.FC<RatingModalProps> = ({
       const result = await response.json();
       
       if (result.success) {
-        // Success
-        alert("Rating submitted successfully!");
+        toast.success("Rating submitted successfully!");
         onClose();
         setRating(0);
         setReview("");
       } else {
-        alert(result.error || "Failed to submit rating");
+        toast.error(result.error || "Failed to submit rating");
       }
     } catch (error) {
       console.error("Error submitting rating:", error);
-      alert("Failed to submit rating");
+      toast.error("Failed to submit rating");
     } finally {
       setSubmitting(false);
     }
@@ -86,8 +87,8 @@ export const RatingModal: React.FC<RatingModalProps> = ({
 
   if (!isOpen) return null;
 
-  return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+  const modalContent = (
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[9999] p-4">
       <div className="bg-white rounded-xl max-w-md w-full mx-4 p-6">
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
@@ -185,4 +186,6 @@ export const RatingModal: React.FC<RatingModalProps> = ({
       </div>
     </div>
   );
+
+  return ReactDOM.createPortal(modalContent, document.body);
 };

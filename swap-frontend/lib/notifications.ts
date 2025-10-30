@@ -2,6 +2,12 @@ let timers: number[] = [];
 
 export function setupSessionReminders(sessions: any[]) {
   if (typeof window === 'undefined' || !('Notification' in window)) return;
+  
+  // Ensure sessions is an array
+  if (!Array.isArray(sessions)) {
+    console.warn('setupSessionReminders called with non-array:', sessions);
+    return;
+  }
 
   // clear existing timers
   timers.forEach(id => clearTimeout(id));

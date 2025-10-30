@@ -98,16 +98,30 @@ export async function scheduleSession(id: string, actingEmail: string, startAt: 
 }
 
 export async function getProfile(email: string) {
-  const r = await fetch(`${API_BASE}/users/profile?email=${encodeURIComponent(email)}`);
-  return r.ok ? r.json() : null;
+  try {
+    const r = await fetch(`${API_BASE}/users/profile?email=${encodeURIComponent(email)}`);
+    if (!r.ok) return null;
+    const data = await r.json().catch(() => null);
+    return data;
+  } catch (error) {
+    console.error('getProfile error:', error);
+    return null;
+  }
 }
 
-export async function saveOnboarding(email: string, name: string | undefined, skills: string[], courses: string[]) {
+export async function saveOnboarding(
+  email: string, 
+  name: string | undefined, 
+  skills: string[], 
+  courses: string[],
+  interests?: Array<{type: 'skill' | 'course', name: string}>
+) {
   const payload = {
     email,
     name,
     skills: skills.map(n => ({ name: n })),
     courses: courses.map(code => ({ code, grade: "A" })),
+    interests: interests || [],
   };
   const r = await fetch(`${API_BASE}/users/onboarding`, {
     method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload)

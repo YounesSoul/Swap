@@ -7,12 +7,11 @@ import {
   Check, 
   X, 
   Camera,
-  User,
   Mail,
   MapPin,
-  Clock
+  Clock,
+  Lock
 } from "lucide-react";
-import { GlowCard } from "@/components/ui/enhanced-components";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
@@ -40,6 +39,9 @@ export const ProfileHeader: React.FC<ProfileHeaderProps> = ({
     name: user.name || "",
     university: user.university || "AUI",
     timezone: user.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone,
+    currentPassword: "",
+    newPassword: "",
+    confirmPassword: ""
   });
   const [loading, setLoading] = useState(false);
 
@@ -70,6 +72,9 @@ export const ProfileHeader: React.FC<ProfileHeaderProps> = ({
       name: user.name || "",
       university: user.university || "AUI",
       timezone: user.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone,
+      currentPassword: "",
+      newPassword: "",
+      confirmPassword: ""
     });
     setIsEditing(true);
   };
@@ -80,19 +85,57 @@ export const ProfileHeader: React.FC<ProfileHeaderProps> = ({
       name: user.name || "",
       university: user.university || "AUI",
       timezone: user.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone,
+      currentPassword: "",
+      newPassword: "",
+      confirmPassword: ""
     });
   };
 
   const handleSave = async () => {
     if (!onUpdateProfile) return;
     
+    // Validate password change if attempted
+    if (formData.newPassword || formData.confirmPassword || formData.currentPassword) {
+      if (!formData.currentPassword) {
+        toast.error("Current password is required to change password");
+        return;
+      }
+      if (formData.newPassword !== formData.confirmPassword) {
+        toast.error("New passwords do not match");
+        return;
+      }
+      if (formData.newPassword.length < 8) {
+        toast.error("New password must be at least 8 characters");
+        return;
+      }
+    }
+    
     setLoading(true);
     try {
+      // Update profile info
       await onUpdateProfile(formData);
+      
+      // Update password if provided
+      if (formData.newPassword && formData.currentPassword) {
+        const response = await fetch('/api/user/change-password', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            currentPassword: formData.currentPassword,
+            newPassword: formData.newPassword
+          })
+        });
+        
+        if (!response.ok) {
+          const error = await response.json();
+          throw new Error(error.message || 'Failed to change password');
+        }
+      }
+      
       setIsEditing(false);
       toast.success("Profile updated successfully!");
     } catch (error) {
-      toast.error("Failed to update profile");
+      toast.error(error instanceof Error ? error.message : "Failed to update profile");
     } finally {
       setLoading(false);
     }
@@ -110,7 +153,7 @@ export const ProfileHeader: React.FC<ProfileHeaderProps> = ({
 
   return (
     <div ref={cardRef}>
-      <GlowCard className="p-8">
+      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8">
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
         {/* Avatar and Basic Info */}
         <div className="flex items-center space-x-6">
@@ -149,6 +192,33 @@ export const ProfileHeader: React.FC<ProfileHeaderProps> = ({
                   onChange={(e) => setFormData(prev => ({ ...prev, timezone: e.target.value }))}
                   placeholder="Timezone"
                 />
+                
+                {/* Password Change Section */}
+                <div className="pt-4 border-t border-gray-200 space-y-3">
+                  <div className="flex items-center space-x-2 text-sm font-medium text-gray-700">
+                    <Lock className="w-4 h-4" />
+                    <span>Change Password (Optional)</span>
+                  </div>
+                  
+                  <Input
+                    type="password"
+                    value={formData.currentPassword}
+                    onChange={(e) => setFormData(prev => ({ ...prev, currentPassword: e.target.value }))}
+                    placeholder="Current password"
+                  />
+                  <Input
+                    type="password"
+                    value={formData.newPassword}
+                    onChange={(e) => setFormData(prev => ({ ...prev, newPassword: e.target.value }))}
+                    placeholder="New password (min 8 characters)"
+                  />
+                  <Input
+                    type="password"
+                    value={formData.confirmPassword}
+                    onChange={(e) => setFormData(prev => ({ ...prev, confirmPassword: e.target.value }))}
+                    placeholder="Confirm new password"
+                  />
+                </div>
               </div>
             ) : (
               <>
@@ -233,7 +303,7 @@ export const ProfileHeader: React.FC<ProfileHeaderProps> = ({
           Add more skills and courses to complete your profile
         </p>
       </div>
-      </GlowCard>
+      </div>
     </div>
   );
 };
