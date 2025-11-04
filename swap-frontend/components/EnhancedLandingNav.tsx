@@ -30,7 +30,7 @@ const navigationItems: NavigationItem[] = [
       },
       { 
         title: "Community Hub", 
-        href: "/features/community",
+        href: "/features/community-hub",
         description: "Connect with like-minded learners"
       },
       { 
@@ -47,7 +47,7 @@ const navigationItems: NavigationItem[] = [
   },
   {
     title: "Community",
-    href: "/community",
+    href: "/features/community-hub",
     description: "Join our learning community"
   },
   {

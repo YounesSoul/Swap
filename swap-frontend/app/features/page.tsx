@@ -30,7 +30,7 @@ const features = [
   },
   {
     title: "Community Hub",
-    href: "/features/community", 
+    href: "/features/community-hub",
     description: "Connect with like-minded learners in a supportive, collaborative environment",
     icon: Heart,
     color: "from-green-500 to-emerald-500",
