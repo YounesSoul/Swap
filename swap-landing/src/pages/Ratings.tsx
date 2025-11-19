@@ -57,6 +57,7 @@ const Ratings = () => {
   const { user, loading: authLoading } = useSupabaseAuth();
   const me = useSwap((state: SwapState) => state.me);
   const isSeeded = useSwap((state: SwapState) => state.isSeeded);
+  const onboarded = useSwap((state: SwapState) => state.onboarded);
   const [searchParams] = useSearchParams();
 
   const rawUserId = searchParams.get("userId");
@@ -79,6 +80,12 @@ const Ratings = () => {
       navigate(`/signin?callbackUrl=${encodeURIComponent("/ratings")}`);
     }
   }, [authLoading, navigate, user]);
+
+  useEffect(() => {
+    if (!authLoading && user && isSeeded && !onboarded) {
+      navigate("/onboarding", { replace: true });
+    }
+  }, [authLoading, user, isSeeded, onboarded, navigate]);
 
   useEffect(() => {
     if (!resolvedUserId) {

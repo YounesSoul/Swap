@@ -52,8 +52,11 @@ export type SessionItem = {
   status: "scheduled" | "done" | "completed";
   startAt?: string | null;
   endAt?: string | null;
+  sessionType?: "ONLINE" | "FACE_TO_FACE" | null;
+  meetingLink?: string | null;
   teacher?: { email?: string; name?: string | null };
   learner?: { email?: string; name?: string | null };
+  timeSlot?: { dayOfWeek?: string; startTime?: string; endTime?: string; sessionType?: "ONLINE" | "FACE_TO_FACE" };
 };
 
 export type LedgerEntry = { id: string; delta: number; reason: string; createdAt?: string };

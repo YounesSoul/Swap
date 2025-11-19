@@ -112,42 +112,178 @@ const Header = () => {
             </ul>
           </nav>
             */}
-          {/* mobile dropdown */}
+          {/* dropdown menu */}
           {open && (
             <nav
-              className="d-md-none mt-10 td-rounded-10"
+              className="mt-10 td-rounded-10"
               style={{
-                border: "1px solid rgba(28,29,31,.12)",
+                position: "absolute",
+                top: "calc(100% + 8px)",
+                left: "16px",
+                zIndex: 1000,
+                border: "1px solid rgba(28,29,31,.08)",
                 background: "white",
-                boxShadow: "0 12px 30px rgba(2,6,23,.08)",
+                boxShadow: "0 8px 24px rgba(0,0,0,.12), 0 2px 6px rgba(0,0,0,.04)",
+                minWidth: "260px",
+                borderRadius: "12px",
               }}
             >
-              <ul style={{ listStyle: "none", margin: 0, padding: 12 }}>
-                <li className="py-10"><Link to="/about" onClick={() => setOpen(false)}>About</Link></li>
-                <li className="py-10"><a href="/#how-it-works" onClick={() => setOpen(false)}>How It Works</a></li>
-                <li className="py-10"><Link to="/pricing" onClick={() => setOpen(false)}>Pricing</Link></li>
-                <li className="py-10"><a href={swapAppRoutes.community} onClick={() => setOpen(false)}>Community</a></li>
-                <li className="py-10">
-                  {renderAuthCTA(
-                    "signin",
-                    "",
-                    "Sign In",
-                    () => setOpen(false)
-                  )}
+              <ul style={{ listStyle: "none", margin: 0, padding: "8px" }}>
+                <li>
+                  <Link 
+                    to="/about" 
+                    onClick={() => setOpen(false)}
+                    style={{ 
+                      display: "block",
+                      color: "#1c1d1f", 
+                      textDecoration: "none",
+                      fontSize: "15px",
+                      fontWeight: 500,
+                      padding: "12px 16px",
+                      borderRadius: "8px",
+                      transition: "all 0.2s"
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.backgroundColor = "rgba(190, 255, 1, 0.1)";
+                      e.currentTarget.style.color = "#1c1d1f";
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.backgroundColor = "transparent";
+                      e.currentTarget.style.color = "#1c1d1f";
+                    }}
+                  >
+                    About Swap
+                  </Link>
                 </li>
-                <li className="py-10">
-                  {renderAuthCTA(
-                    "register",
-                    "td-btn td-btn-lg td-btn-switch-animation w-100 d-inline-block text-center",
-                    (
-                      <span className="d-flex align-items-center justify-content-center">
-                        <span className="btn-text"> Join Free </span>
-                        <span className="btn-icon"><i className="fa-sharp fa-solid fa-angle-right"></i></span>
-                        <span className="btn-icon"><i className="fa-sharp fa-solid fa-angle-right"></i></span>
-                      </span>
-                    ),
-                    () => setOpen(false)
-                  )}
+                <li>
+                  <Link 
+                    to="/smart-matching" 
+                    onClick={() => setOpen(false)}
+                    style={{ 
+                      display: "block",
+                      color: "#1c1d1f", 
+                      textDecoration: "none",
+                      fontSize: "15px",
+                      fontWeight: 500,
+                      padding: "12px 16px",
+                      borderRadius: "8px",
+                      transition: "all 0.2s"
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.backgroundColor = "rgba(190, 255, 1, 0.1)";
+                      e.currentTarget.style.color = "#1c1d1f";
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.backgroundColor = "transparent";
+                      e.currentTarget.style.color = "#1c1d1f";
+                    }}
+                  >
+                    Smart Matching
+                  </Link>
+                </li>
+                <li>
+                  <Link 
+                    to="/flexible-scheduling" 
+                    onClick={() => setOpen(false)}
+                    style={{ 
+                      display: "block",
+                      color: "#1c1d1f", 
+                      textDecoration: "none",
+                      fontSize: "15px",
+                      fontWeight: 500,
+                      padding: "12px 16px",
+                      borderRadius: "8px",
+                      transition: "all 0.2s"
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.backgroundColor = "rgba(190, 255, 1, 0.1)";
+                      e.currentTarget.style.color = "#1c1d1f";
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.backgroundColor = "transparent";
+                      e.currentTarget.style.color = "#1c1d1f";
+                    }}
+                  >
+                    Flexible Scheduling
+                  </Link>
+                </li>
+                <li>
+                  <Link 
+                    to="/knowledge-exchange" 
+                    onClick={() => setOpen(false)}
+                    style={{ 
+                      display: "block",
+                      color: "#1c1d1f", 
+                      textDecoration: "none",
+                      fontSize: "15px",
+                      fontWeight: 500,
+                      padding: "12px 16px",
+                      borderRadius: "8px",
+                      transition: "all 0.2s"
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.backgroundColor = "rgba(190, 255, 1, 0.1)";
+                      e.currentTarget.style.color = "#1c1d1f";
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.backgroundColor = "transparent";
+                      e.currentTarget.style.color = "#1c1d1f";
+                    }}
+                  >
+                    Knowledge Exchange
+                  </Link>
+                </li>
+                <li>
+                  <a 
+                    href="/#how-it-works" 
+                    onClick={() => setOpen(false)}
+                    style={{ 
+                      display: "block",
+                      color: "#1c1d1f", 
+                      textDecoration: "none",
+                      fontSize: "15px",
+                      fontWeight: 500,
+                      padding: "12px 16px",
+                      borderRadius: "8px",
+                      transition: "all 0.2s"
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.backgroundColor = "rgba(190, 255, 1, 0.1)";
+                      e.currentTarget.style.color = "#1c1d1f";
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.backgroundColor = "transparent";
+                      e.currentTarget.style.color = "#1c1d1f";
+                    }}
+                  >
+                    How It Works
+                  </a>
+                </li>
+                <li>
+                  <a 
+                    href={swapAppRoutes.community} 
+                    onClick={() => setOpen(false)}
+                    style={{ 
+                      display: "block",
+                      color: "#1c1d1f", 
+                      textDecoration: "none",
+                      fontSize: "15px",
+                      fontWeight: 500,
+                      padding: "12px 16px",
+                      borderRadius: "8px",
+                      transition: "all 0.2s"
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.backgroundColor = "rgba(190, 255, 1, 0.1)";
+                      e.currentTarget.style.color = "#1c1d1f";
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.backgroundColor = "transparent";
+                      e.currentTarget.style.color = "#1c1d1f";
+                    }}
+                  >
+                    Community
+                  </a>
                 </li>
               </ul>
             </nav>

@@ -15,7 +15,7 @@ export class SessionsService {
       include: { 
         teacher: { select: { email: true, name: true, image: true, id: true } }, 
         learner: { select: { email: true, name: true, image: true, id: true } },
-        timeSlot: { select: { dayOfWeek: true, startTime: true, endTime: true } } // Include timeslot info
+        timeSlot: { select: { dayOfWeek: true, startTime: true, endTime: true, sessionType: true } } // Include session type
       },
     });
   }

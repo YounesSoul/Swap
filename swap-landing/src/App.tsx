@@ -4,6 +4,7 @@ import HomeOne from "./components/homes/home-one";
 import SEO from "./components/SEO";
 import SignIn from "./pages/SignIn";
 import SignUp from "./pages/SignUp";
+import Onboarding from "./pages/Onboarding";
 import AboutPage from "./pages/About";
 import Dashboard from "./pages/Dashboard";
 import Matches from "./pages/Matches";
@@ -47,6 +48,15 @@ const App = () => (
               <>
                 <SEO pageTitle="Join Swap" />
                 <SignUp />
+              </>
+            }
+          />
+          <Route
+            path="/onboarding"
+            element={
+              <>
+                <SEO pageTitle="Onboarding" />
+                <Onboarding />
               </>
             }
           />

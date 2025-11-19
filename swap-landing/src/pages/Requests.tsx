@@ -9,7 +9,17 @@ import { useSupabaseAuth } from "@/providers/SupabaseAuthProvider";
 import "@/styles/requests.scss";
 
 type Filter = "all" | "pending" | "accepted" | "declined";
-type RequestRecord = RequestItem & Record<string, any>;
+type RequestRecord = RequestItem & {
+  skills?: Array<{ name: string }>;
+  skill?: string;
+  course?: { code?: string; grade?: string };
+  fromUser?: { name?: string | null; email?: string | null };
+  toUser?: { name?: string | null; email?: string | null };
+  fromName?: string | null;
+  toName?: string | null;
+  fromEmail?: string | null;
+  toEmail?: string | null;
+};
 
 type RequestCardProps = {
   request: RequestRecord;
@@ -31,9 +41,9 @@ const normalizeStatus = (status?: string | null) => status?.toUpperCase?.() ?? "
 
 const resolvePartnerLabel = (request: RequestRecord, type: "inbox" | "sent") => {
   const key = type === "inbox" ? "from" : "to";
-  const user = request[`${key}User`];
-  const legacyName = request[`${key}Name`];
-  const legacyEmail = request[`${key}Email`];
+  const user = request[`${key}User`] as RequestRecord["fromUser"] | undefined;
+  const legacyName = request[`${key}Name`] as string | null | undefined;
+  const legacyEmail = request[`${key}Email`] as string | null | undefined;
 
   if (user?.name) return user.name;
   if (legacyName) return legacyName;
@@ -46,8 +56,8 @@ const resolvePartnerLabel = (request: RequestRecord, type: "inbox" | "sent") => 
 
 const resolvePartnerEmail = (request: RequestRecord, type: "inbox" | "sent") => {
   const key = type === "inbox" ? "from" : "to";
-  const user = request[`${key}User`];
-  const legacyEmail = request[`${key}Email`];
+  const user = request[`${key}User`] as RequestRecord["fromUser"] | undefined;
+  const legacyEmail = request[`${key}Email`] as string | null | undefined;
   if (user?.email) return user.email;
   if (legacyEmail) return legacyEmail;
   return undefined;
@@ -156,6 +166,8 @@ const Requests = () => {
   const declineRequest = useSwap((state: SwapState) => state.declineRequest);
   const clearAnsweredRequests = useSwap((state: SwapState) => state.clearAnsweredRequests);
   const clearAllRequests = useSwap((state: SwapState) => state.clearAllRequests);
+  const onboarded = useSwap((state: SwapState) => state.onboarded);
+  const isSeeded = useSwap((state: SwapState) => state.isSeeded);
 
   const [filter, setFilter] = useState<Filter>("all");
   const [processingId, setProcessingId] = useState<string | null>(null);
@@ -166,6 +178,12 @@ const Requests = () => {
       navigate(`/signin?callbackUrl=${encodeURIComponent("/requests")}`);
     }
   }, [authLoading, navigate, user]);
+
+  useEffect(() => {
+    if (!authLoading && user && isSeeded && !onboarded) {
+      navigate("/onboarding", { replace: true });
+    }
+  }, [authLoading, user, isSeeded, onboarded, navigate]);
 
   const isLoadingPage = authLoading || (!!user && !me);
 
@@ -183,13 +201,19 @@ const Requests = () => {
     };
   }, [inbox, sent]);
 
-  const filterRequests = (requests: RequestRecord[]) => {
-    if (filter === "all") return requests;
-    return requests.filter((item) => normalizeStatus(item.status) === filter.toUpperCase());
-  };
+  const filteredInbox = useMemo(() => {
+    if (filter === "all") {
+      return inbox;
+    }
+    return inbox.filter((item) => normalizeStatus(item.status) === filter.toUpperCase());
+  }, [filter, inbox]);
 
-  const filteredInbox = useMemo(() => filterRequests(inbox), [filter, inbox]);
-  const filteredSent = useMemo(() => filterRequests(sent), [filter, sent]);
+  const filteredSent = useMemo(() => {
+    if (filter === "all") {
+      return sent;
+    }
+    return sent.filter((item) => normalizeStatus(item.status) === filter.toUpperCase());
+  }, [filter, sent]);
 
   const handleAccept = async (id: string) => {
     setProcessingId(id);

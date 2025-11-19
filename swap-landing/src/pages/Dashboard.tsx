@@ -41,12 +41,20 @@ const Dashboard = () => {
   const sessions = useSwap((state: SwapState) => state.sessions);
   const inbox = useSwap((state: SwapState) => state.inbox);
   const tokenBalance = useSwap((state: SwapState) => state.tokenBalance);
+  const onboarded = useSwap((state: SwapState) => state.onboarded);
+  const isSeeded = useSwap((state: SwapState) => state.isSeeded);
 
   useEffect(() => {
     if (!authLoading && !user) {
       navigate(`/signin?callbackUrl=${encodeURIComponent("/dashboard")}`);
     }
   }, [authLoading, navigate, user]);
+
+  useEffect(() => {
+    if (!authLoading && user && isSeeded && !onboarded) {
+      navigate("/onboarding", { replace: true });
+    }
+  }, [authLoading, user, isSeeded, onboarded, navigate]);
 
   const scheduledSessions = useMemo(() => {
     return [...sessions]

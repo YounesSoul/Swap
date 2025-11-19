@@ -73,27 +73,27 @@ export const createRequest = async (
 
 export const listInbox = async (email: string) => {
   if (!API_BASE) {
-    return [] as any[];
+    return [];
   }
 
   try {
     const response = await fetch(`${API_BASE}/requests?inbox=1&email=${encodeURIComponent(email)}`);
     return (await safeJson(response)) ?? [];
   } catch {
-    return [] as any[];
+    return [];
   }
 };
 
 export const listSent = async (email: string) => {
   if (!API_BASE) {
-    return [] as any[];
+    return [];
   }
 
   try {
     const response = await fetch(`${API_BASE}/requests?sent=1&email=${encodeURIComponent(email)}`);
     return (await safeJson(response)) ?? [];
   } catch {
-    return [] as any[];
+    return [];
   }
 };
 
@@ -167,14 +167,14 @@ export const clearAllRequests = async (actingEmail: string) => {
 
 export const listSessions = async (email: string) => {
   if (!API_BASE) {
-    return [] as any[];
+    return [];
   }
 
   try {
     const response = await fetch(`${API_BASE}/sessions?email=${encodeURIComponent(email)}`);
     return (await safeJson(response)) ?? [];
   } catch {
-    return [] as any[];
+    return [];
   }
 };
 

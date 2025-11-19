@@ -176,23 +176,27 @@ model Request {
 }
 
 model Session {
-  id         String         @id @default(uuid())
-  teacher    User           @relation("TeacherSessions", fields: [teacherId], references: [id])
-  teacherId  String
-  learner    User           @relation("LearnerSessions", fields: [learnerId], references: [id])
-  learnerId  String
-  courseCode String
-  minutes    Int
-  status     String         @default("scheduled")
-  startAt    DateTime?
-  endAt      DateTime?
-  createdAt  DateTime       @default(now())
-  ledger     CreditLedger[]
-  tokens     TokenLedger[]
+  id          String         @id @default(uuid())
+  teacher     User           @relation("TeacherSessions", fields: [teacherId], references: [id])
+  teacherId   String
+  learner     User           @relation("LearnerSessions", fields: [learnerId], references: [id])
+  learnerId   String
+  courseCode  String
+  minutes     Int
+  status      String         @default("scheduled")
+  startAt     DateTime?
+  endAt       DateTime?
+  createdAt   DateTime       @default(now())
+  ledger      CreditLedger[]
+  tokens      TokenLedger[]
 
   // Link to booked time slot
-  timeSlot   TimeSlot? @relation(fields: [timeSlotId], references: [id])
-  timeSlotId String?
+  timeSlot    TimeSlot? @relation(fields: [timeSlotId], references: [id])
+  timeSlotId  String?
+  
+  // Session delivery mode and meeting info
+  sessionType SessionType?   // inherited from TimeSlot
+  meetingLink String?        // Zoom link for online sessions
 
   request Request? @relation("RequestToSession")
   ratings Rating[]
@@ -314,30 +318,38 @@ enum DayOfWeek {
   SUNDAY
 }
 
+enum SessionType {
+  ONLINE
+  FACE_TO_FACE
+}
+
 model TimeSlot {
-  id          String     @id @default(uuid())
-  teacher     User       @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+  id          String      @id @default(uuid())
+  teacher     User        @relation(fields: [teacherId], references: [id], onDelete: Cascade)
   teacherId   String
   
   // What is being taught
-  type        String     // "course" or "skill"
-  courseCode  String?    // if type = "course"
-  skillName   String?    // if type = "skill"
+  type        String      // "course" or "skill"
+  courseCode  String?     // if type = "course"
+  skillName   String?     // if type = "skill"
   
   // When (recurring weekly)
   dayOfWeek   DayOfWeek
-  startTime   String     // HH:MM format (e.g., "14:00")
-  endTime     String     // HH:MM format (e.g., "16:00")
+  startTime   String      // HH:MM format (e.g., "14:00")
+  endTime     String      // HH:MM format (e.g., "16:00")
+  
+  // How (delivery mode)
+  sessionType SessionType @default(ONLINE) // online or face-to-face
   
   // Status
-  isActive    Boolean    @default(true) // teacher can deactivate without deleting
+  isActive    Boolean     @default(true) // teacher can deactivate without deleting
   
   // Bookings
   sessions    Session[]
-  requests    Request[]  // Requests for this time slot
+  requests    Request[]   // Requests for this time slot
   
-  createdAt   DateTime   @default(now())
-  updatedAt   DateTime   @updatedAt
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
   
   @@index([teacherId, type, isActive])
   @@index([type, courseCode])

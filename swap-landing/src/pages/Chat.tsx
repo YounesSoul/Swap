@@ -44,6 +44,8 @@ const Chat = () => {
   const location = useLocation();
   const { user, loading: authLoading } = useSupabaseAuth();
   const me = useSwap((state: SwapState) => state.me);
+  const onboarded = useSwap((state: SwapState) => state.onboarded);
+  const isSeeded = useSwap((state: SwapState) => state.isSeeded);
   const meEmail = user?.email ?? me?.email ?? "";
 
   const searchParams = useMemo(() => new URLSearchParams(location.search), [location.search]);
@@ -65,6 +67,12 @@ const Chat = () => {
       navigate(`/signin?callbackUrl=${encodeURIComponent("/chat")}`);
     }
   }, [authLoading, navigate, user]);
+
+  useEffect(() => {
+    if (!authLoading && user && isSeeded && !onboarded) {
+      navigate("/onboarding", { replace: true });
+    }
+  }, [authLoading, user, isSeeded, onboarded, navigate]);
 
   useEffect(() => {
     let cancelled = false;

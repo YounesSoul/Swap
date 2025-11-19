@@ -1,5 +1,5 @@
 import { Injectable, Inject, BadRequestException, NotFoundException } from '@nestjs/common';
-import { DayOfWeek } from '@prisma/client';
+import { DayOfWeek, SessionType } from '@prisma/client';
 import { PrismaService } from '../prisma.service';
 
 @Injectable()
@@ -15,6 +15,7 @@ export class TimeSlotsService {
     dayOfWeek: DayOfWeek,
     startTime: string,
     endTime: string,
+    sessionType: SessionType = SessionType.ONLINE,
   ) {
     const user = await this.prisma.user.findUnique({ where: { email } });
     if (!user) throw new NotFoundException('User not found');
@@ -66,6 +67,7 @@ export class TimeSlotsService {
         dayOfWeek,
         startTime,
         endTime,
+        sessionType,
       },
     });
   }
@@ -141,6 +143,7 @@ export class TimeSlotsService {
       startTime?: string;
       endTime?: string;
       isActive?: boolean;
+      sessionType?: SessionType;
     },
   ) {
     const user = await this.prisma.user.findUnique({ where: { email } });

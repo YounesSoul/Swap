@@ -28,6 +28,11 @@ enum DayOfWeek {
   SUNDAY = 'SUNDAY',
 }
 
+enum SessionTypeEnum {
+  ONLINE = 'ONLINE',
+  FACE_TO_FACE = 'FACE_TO_FACE',
+}
+
 class CreateTimeSlotDto {
   @IsString()
   type!: 'course' | 'skill';
@@ -48,6 +53,9 @@ class CreateTimeSlotDto {
   
   @IsString()
   endTime!: string; // HH:MM
+  
+  @IsEnum(SessionTypeEnum)
+  sessionType!: SessionTypeEnum;
 }
 
 class UpdateTimeSlotDto {
@@ -66,6 +74,10 @@ class UpdateTimeSlotDto {
   @IsOptional()
   @IsBoolean()
   isActive?: boolean;
+  
+  @IsOptional()
+  @IsEnum(SessionTypeEnum)
+  sessionType?: SessionTypeEnum;
 }
 
 @Controller('timeslots')
@@ -84,6 +96,7 @@ export class TimeSlotsController {
       body.dayOfWeek,
       body.startTime,
       body.endTime,
+      body.sessionType,
     );
   }
 

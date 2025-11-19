@@ -16,6 +16,7 @@ type TimeSlot = {
   dayOfWeek: string;
   startTime: string;
   endTime: string;
+  sessionType?: "ONLINE" | "FACE_TO_FACE";
 };
 
 type SearchTeacherResult = TeacherResult & { timeSlots?: TimeSlot[] };
@@ -51,18 +52,18 @@ const ResultCard = ({ result, meEmail, onMessage, onBook, onBookTimeSlot, isBook
   const ratingValue = result.ratingData?.averageRating ?? 0;
   const ratingCount = result.ratingData?.totalRatings ?? 0;
   const displayRating = ratingValue > 0 ? ratingValue.toFixed(1) : "—";
-  const timeSlots = result.timeSlots ?? [];
-  const hasAvailability = timeSlots.length > 0;
+  const hasAvailability = (result.timeSlots?.length ?? 0) > 0;
 
   const sortedSlots = useMemo(() => {
-    return [...timeSlots].sort((a, b) => {
+    const source = result.timeSlots ?? [];
+    return [...source].sort((a, b) => {
       const dayDifference = (dayOrder[a.dayOfWeek] ?? 0) - (dayOrder[b.dayOfWeek] ?? 0);
       if (dayDifference !== 0) {
         return dayDifference;
       }
       return a.startTime.localeCompare(b.startTime);
     });
-  }, [timeSlots]);
+  }, [result.timeSlots]);
 
   return (
     <article className="td-matches__card">
@@ -121,6 +122,9 @@ const ResultCard = ({ result, meEmail, onMessage, onBook, onBookTimeSlot, isBook
                 <span>
                   {slot.startTime} – {slot.endTime}
                 </span>
+                <span className="td-matches__session-type">
+                  {slot.sessionType === "ONLINE" ? "🌐 Online" : "📍 Face-to-face"}
+                </span>
               </button>
             ))}
           </div>
@@ -159,6 +163,8 @@ const Matches = () => {
   const rawResults = useSwap((state: SwapState) => state.searchResults);
   const searchTeachers = useSwap((state: SwapState) => state.searchTeachers);
   const sendRequest = useSwap((state: SwapState) => state.sendRequest);
+  const onboarded = useSwap((state: SwapState) => state.onboarded);
+  const isSeeded = useSwap((state: SwapState) => state.isSeeded);
 
   const results = useMemo(() => rawResults as SearchTeacherResult[], [rawResults]);
 
@@ -175,6 +181,12 @@ const Matches = () => {
       navigate(`/signin?callbackUrl=${encodeURIComponent("/matches")}`);
     }
   }, [authLoading, navigate, user]);
+
+  useEffect(() => {
+    if (!authLoading && user && isSeeded && !onboarded) {
+      navigate("/onboarding", { replace: true });
+    }
+  }, [authLoading, user, isSeeded, onboarded, navigate]);
 
   const performSearch = async (targetQuery: string, targetMode: SearchMode) => {
     const trimmed = targetQuery.trim();
