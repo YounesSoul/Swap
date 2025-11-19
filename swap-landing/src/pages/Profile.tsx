@@ -37,6 +37,7 @@ type TimeSlot = {
   dayOfWeek: string;
   startTime: string;
   endTime: string;
+  sessionType?: "ONLINE" | "FACE_TO_FACE";
   isActive?: boolean;
 };
 
@@ -98,6 +99,26 @@ const Profile = () => {
 
   const [availability, setAvailability] = useState<TimeSlot[]>([]);
   const [availabilityLoading, setAvailabilityLoading] = useState(false);
+
+  const [showAddSlotModal, setShowAddSlotModal] = useState(false);
+  const [slotForm, setSlotForm] = useState<{
+    type: "course" | "skill";
+    courseCode: string;
+    skillName: string;
+    dayOfWeek: string;
+    startTime: string;
+    endTime: string;
+    sessionType: "ONLINE" | "FACE_TO_FACE";
+  }>({
+    type: "course",
+    courseCode: "",
+    skillName: "",
+    dayOfWeek: "MONDAY",
+    startTime: "",
+    endTime: "",
+    sessionType: "ONLINE",
+  });
+  const [slotBusy, setSlotBusy] = useState(false);
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -307,6 +328,88 @@ const Profile = () => {
       toast.error("Upload failed. Try again later.");
     } finally {
       setTranscriptBusy(false);
+    }
+  };
+
+  const handleDeleteSlot = async (slotId: string) => {
+    const apiBase = getApiBase();
+    if (!apiBase || !me?.email) {
+      toast.error("Cannot delete time slot right now.");
+      return;
+    }
+
+    try {
+      const response = await fetch(`${apiBase}/timeslots/${slotId}`, {
+        method: "DELETE",
+        headers: {
+          "x-user-email": me.email,
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to delete time slot");
+      }
+
+      setAvailability((prev) => prev.filter((slot) => slot.id !== slotId));
+      toast.success("Time slot removed");
+    } catch (error) {
+      console.error("Failed to delete time slot", error);
+      toast.error("Could not delete that time slot");
+    }
+  };
+
+  const handleAddSlot = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+
+    const apiBase = getApiBase();
+    if (!apiBase || !me?.email) {
+      toast.error("Cannot add time slot right now.");
+      return;
+    }
+
+    setSlotBusy(true);
+    try {
+      const payload = {
+        type: slotForm.type,
+        courseCode: slotForm.type === "course" ? slotForm.courseCode : undefined,
+        skillName: slotForm.type === "skill" ? slotForm.skillName : undefined,
+        dayOfWeek: slotForm.dayOfWeek,
+        startTime: slotForm.startTime,
+        endTime: slotForm.endTime,
+        sessionType: slotForm.sessionType,
+      };
+
+      const response = await fetch(`${apiBase}/timeslots`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-user-email": me.email,
+        },
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to create time slot");
+      }
+
+      const newSlot = (await response.json()) as TimeSlot;
+      setAvailability((prev) => [...prev, newSlot]);
+      setShowAddSlotModal(false);
+      setSlotForm({
+        type: "course",
+        courseCode: "",
+        skillName: "",
+        dayOfWeek: "MONDAY",
+        startTime: "",
+        endTime: "",
+        sessionType: "ONLINE",
+      });
+      toast.success("Time slot added");
+    } catch (error) {
+      console.error("Failed to create time slot", error);
+      toast.error("Could not add that time slot");
+    } finally {
+      setSlotBusy(false);
     }
   };
 
@@ -636,23 +739,48 @@ const Profile = () => {
               </div>
             ) : (
               <ul className="td-profile-card__list">
-                {availability.slice(0, 5).map((slot) => (
-                  <li key={slot.id}>
-                    <div>
-                      <p className="td-profile-card__list-title">{slot.type === "course" ? slot.courseCode : slot.skillName}</p>
-                      <p className="td-profile-card__list-subtitle">{slot.dayOfWeek}</p>
+                {availability.map((slot) => (
+                  <li key={slot.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "12px" }}>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                        <p className="td-profile-card__list-title" style={{ margin: 0 }}>{slot.type === "course" ? slot.courseCode : slot.skillName}</p>
+                        {slot.sessionType && (
+                          <span 
+                            className="td-profile-card__chip td-profile-card__chip--soft" 
+                            style={{ fontSize: "11px", padding: "2px 8px" }}
+                          >
+                            {slot.sessionType === "ONLINE" ? "🌐 Online" : "📍 Face-to-face"}
+                          </span>
+                        )}
+                      </div>
+                      <p className="td-profile-card__list-subtitle" style={{ margin: "4px 0 0" }}>{slot.dayOfWeek}</p>
+                      <div className="td-profile-card__list-meta">
+                        <Clock size={14} aria-hidden="true" />
+                        <span>
+                          {slot.startTime} — {slot.endTime}
+                        </span>
+                      </div>
                     </div>
-                    <div className="td-profile-card__list-meta">
-                      <Clock size={14} aria-hidden="true" />
-                      <span>
-                        {slot.startTime} — {slot.endTime}
-                      </span>
-                    </div>
+                    <button
+                      type="button"
+                      className="td-profile-card__chip-button"
+                      onClick={() => void handleDeleteSlot(slot.id)}
+                      aria-label={`Delete ${slot.type === "course" ? slot.courseCode : slot.skillName} time slot`}
+                    >
+                      <Trash2 size={14} aria-hidden="true" />
+                    </button>
                   </li>
                 ))}
               </ul>
             )}
-            <p className="td-profile-card__hint">Manage detailed availability from Sessions.</p>
+            <button
+              type="button"
+              className="td-btn td-btn-outline"
+              style={{ marginTop: "1rem", width: "100%" }}
+              onClick={() => setShowAddSlotModal(true)}
+            >
+              <Plus size={16} aria-hidden="true" /> Add time slot
+            </button>
           </article>
 
           <article className="td-profile-card" aria-label="Upcoming sessions">
@@ -683,6 +811,169 @@ const Profile = () => {
           </article>
         </section>
       </div>
+
+      {/* Add Time Slot Modal */}
+      {showAddSlotModal && (
+        <div className="td-modal-overlay" onClick={() => setShowAddSlotModal(false)}>
+          <div className="td-modal" onClick={(e) => e.stopPropagation()}>
+            <header className="td-modal__header">
+              <h2>Add teaching time slot</h2>
+              <button type="button" onClick={() => setShowAddSlotModal(false)} aria-label="Close">
+                ×
+              </button>
+            </header>
+            <form onSubmit={handleAddSlot} className="td-modal__form">
+              <label>
+                Teaching
+                <div style={{ display: "flex", gap: "0.5rem" }}>
+                  <button
+                    type="button"
+                    className={slotForm.type === "course" ? "td-btn td-btn-sm" : "td-btn td-btn-outline td-btn-sm"}
+                    onClick={() => setSlotForm((prev) => ({ ...prev, type: "course" }))}
+                  >
+                    Course
+                  </button>
+                  <button
+                    type="button"
+                    className={slotForm.type === "skill" ? "td-btn td-btn-sm" : "td-btn td-btn-outline td-btn-sm"}
+                    onClick={() => setSlotForm((prev) => ({ ...prev, type: "skill" }))}
+                  >
+                    Skill
+                  </button>
+                </div>
+              </label>
+
+              {slotForm.type === "course" ? (
+                <label>
+                  Course code
+                  <select
+                    value={slotForm.courseCode}
+                    onChange={(e) => setSlotForm((prev) => ({ ...prev, courseCode: e.target.value }))}
+                    required
+                  >
+                    <option value="">Select a course</option>
+                    {myCourses.map((course) => (
+                      <option key={course.courseCode} value={course.courseCode}>
+                        {course.courseCode}
+                      </option>
+                    ))}
+                  </select>
+                  {myCourses.length === 0 && (
+                    <p style={{ fontSize: "12px", color: "rgba(15, 23, 42, 0.6)", margin: "4px 0 0" }}>
+                      Add courses to your profile first
+                    </p>
+                  )}
+                </label>
+              ) : (
+                <label>
+                  Skill name
+                  <select
+                    value={slotForm.skillName}
+                    onChange={(e) => setSlotForm((prev) => ({ ...prev, skillName: e.target.value }))}
+                    required
+                  >
+                    <option value="">Select a skill</option>
+                    {mySkills.map((skill) => (
+                      <option key={skill} value={skill}>
+                        {skill}
+                      </option>
+                    ))}
+                  </select>
+                  {mySkills.length === 0 && (
+                    <p style={{ fontSize: "12px", color: "rgba(15, 23, 42, 0.6)", margin: "4px 0 0" }}>
+                      Add skills to your profile first
+                    </p>
+                  )}
+                </label>
+              )}
+
+              <label>
+                Day of week
+                <select
+                  value={slotForm.dayOfWeek}
+                  onChange={(e) => setSlotForm((prev) => ({ ...prev, dayOfWeek: e.target.value }))}
+                >
+                  <option value="MONDAY">Monday</option>
+                  <option value="TUESDAY">Tuesday</option>
+                  <option value="WEDNESDAY">Wednesday</option>
+                  <option value="THURSDAY">Thursday</option>
+                  <option value="FRIDAY">Friday</option>
+                  <option value="SATURDAY">Saturday</option>
+                  <option value="SUNDAY">Sunday</option>
+                </select>
+              </label>
+
+              <label>
+                Start time
+                <input
+                  type="time"
+                  value={slotForm.startTime}
+                  onChange={(e) => {
+                    const startTime = e.target.value;
+                    // Calculate end time (1 hour later)
+                    let endTime = "";
+                    if (startTime) {
+                      const [hours, minutes] = startTime.split(":").map(Number);
+                      const endHours = (hours + 1) % 24;
+                      endTime = `${String(endHours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}`;
+                    }
+                    setSlotForm((prev) => ({ ...prev, startTime, endTime }));
+                  }}
+                  required
+                />
+                <p style={{ fontSize: "12px", color: "rgba(15, 23, 42, 0.6)", margin: "4px 0 0" }}>
+                  Session duration: 1 hour
+                </p>
+              </label>
+
+              <label>
+                Session type
+                <div style={{ display: "flex", gap: "0.5rem" }}>
+                  <button
+                    type="button"
+                    className={slotForm.sessionType === "ONLINE" ? "td-btn td-btn-sm" : "td-btn td-btn-outline td-btn-sm"}
+                    onClick={() => setSlotForm((prev) => ({ ...prev, sessionType: "ONLINE" }))}
+                  >
+                    🌐 Online (Teams)
+                  </button>
+                  <button
+                    type="button"
+                    className={slotForm.sessionType === "FACE_TO_FACE" ? "td-btn td-btn-sm" : "td-btn td-btn-outline td-btn-sm"}
+                    onClick={() => setSlotForm((prev) => ({ ...prev, sessionType: "FACE_TO_FACE" }))}
+                  >
+                    📍 Face-to-face
+                  </button>
+                </div>
+              </label>
+
+              <div className="td-modal__actions">
+                <button
+                  type="button"
+                  className="td-btn td-btn-outline"
+                  onClick={() => setShowAddSlotModal(false)}
+                >
+                  Cancel
+                </button>
+                <button 
+                  type="submit" 
+                  className="td-btn td-btn-lg" 
+                  disabled={slotBusy || (slotForm.type === "course" ? myCourses.length === 0 : mySkills.length === 0)}
+                >
+                  {slotBusy ? (
+                    <>
+                      <Loader2 size={16} className="td-profile__spinner" /> Adding…
+                    </>
+                  ) : (
+                    <>
+                      <Plus size={16} /> Add slot
+                    </>
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </main>
   );
 

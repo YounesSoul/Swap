@@ -128,6 +128,14 @@ const SessionCard = ({
             <dd>{new Date(session.startAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</dd>
           </div>
         ) : null}
+        {session.sessionType || session.timeSlot?.sessionType ? (
+          <div>
+            <dt>Type</dt>
+            <dd>
+              {(session.sessionType || session.timeSlot?.sessionType) === "ONLINE" ? "🌐 Online" : "📍 Face-to-face"}
+            </dd>
+          </div>
+        ) : null}
       </dl>
 
       {sessionStatusCompleted ? (
@@ -143,13 +151,31 @@ const SessionCard = ({
       ) : null}
 
       <div className="td-sessions__actions">
+        {/* Show Teams meeting link for online sessions */}
+        {session.meetingLink && (session.sessionType === "ONLINE" || session.timeSlot?.sessionType === "ONLINE") ? (
+          <a
+            className="td-btn td-btn-lg td-sessions__action td-sessions__action--primary"
+            href={session.meetingLink}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M22 8.862a.5.5 0 0 1-.255.434L15 13V8l6.745 3.704A.5.5 0 0 1 22 11.138z"/><rect x="2" y="6" width="13" height="12" rx="2"/></svg>
+            <span>Join Teams Meeting</span>
+          </a>
+        ) : null}
+
+        {/* Show chat button for face-to-face sessions or as fallback */}
         {partnerEmail ? (
           <a
             className="td-btn td-btn-outline td-sessions__action"
             href={`${swapAppRoutes.chat}?with=${encodeURIComponent(partnerEmail)}`}
           >
             <MessageSquare size={16} aria-hidden="true" />
-            <span>Message</span>
+            <span>
+              {(session.sessionType === "FACE_TO_FACE" || session.timeSlot?.sessionType === "FACE_TO_FACE") 
+                ? "Discuss meeting place" 
+                : "Message"}
+            </span>
           </a>
         ) : null}
 
@@ -216,6 +242,8 @@ const Sessions = () => {
   const sessions = useSwap((state: SwapState) => state.sessions) as NormalizedSession[];
   const scheduleSession = useSwap((state: SwapState) => state.scheduleSession);
   const completeSession = useSwap((state: SwapState) => state.completeSession);
+  const onboarded = useSwap((state: SwapState) => state.onboarded);
+  const isSeeded = useSwap((state: SwapState) => state.isSeeded);
 
   const [filter, setFilter] = useState<Filter>("all");
   const [ratedSessions, setRatedSessions] = useState<Set<string>>(new Set());
@@ -232,6 +260,12 @@ const Sessions = () => {
       navigate(`/signin?callbackUrl=${encodeURIComponent("/sessions")}`);
     }
   }, [authLoading, navigate, user]);
+
+  useEffect(() => {
+    if (!authLoading && user && isSeeded && !onboarded) {
+      navigate("/onboarding", { replace: true });
+    }
+  }, [authLoading, user, isSeeded, onboarded, navigate]);
 
   useEffect(() => {
     if (!scheduleOverlay?.session) {

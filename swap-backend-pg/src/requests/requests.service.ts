@@ -1,10 +1,14 @@
 import { Injectable, Inject, BadRequestException } from '@nestjs/common';
-import { Prisma, RequestStatus } from '@prisma/client';
+import { Prisma, RequestStatus, SessionType } from '@prisma/client';
 import { PrismaService } from '../prisma.service';
+import { MeetingsService } from '../meetings/meetings.service';
 
 @Injectable()
 export class RequestsService {
-  constructor(@Inject(PrismaService) private prisma: PrismaService) {}
+  constructor(
+    @Inject(PrismaService) private prisma: PrismaService,
+    @Inject(MeetingsService) private meetingsService: MeetingsService,
+  ) {}
 
   private async ensureUser(email: string) {
     let u = await this.prisma.user.findUnique({ where: { email } });
@@ -181,6 +185,9 @@ export class RequestsService {
         endAt.setHours(endHour, endMin, 0, 0);
       }
 
+      // Get session type from timeSlot if available
+      const sessionType = req.timeSlot?.sessionType || SessionType.ONLINE;
+      
       const session = await tx.session.create({
         data: {
           teacherId: req.toUserId,
@@ -190,8 +197,30 @@ export class RequestsService {
           timeSlotId: req.timeSlotId,
           startAt, // Set automatically if timeSlot exists
           endAt,   // Set automatically if timeSlot exists
+          sessionType,
         },
       });
+      
+      // Generate Teams meeting link for online sessions
+      if (sessionType === SessionType.ONLINE) {
+        const teacher = await tx.user.findUnique({ where: { id: req.toUserId } });
+        const learner = await tx.user.findUnique({ where: { id: req.fromUserId } });
+        
+        const meetingLink = await this.meetingsService.generateMeetingLink(
+          session.id,
+          teacher?.email || '',
+          learner?.email || '',
+          req.courseCode,
+          startAt,
+          req.minutes,
+        );
+        
+        // Update session with meeting link
+        await tx.session.update({
+          where: { id: session.id },
+          data: { meetingLink },
+        });
+      }
 
       await tx.request.update({
         where: { id },
