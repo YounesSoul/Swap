@@ -79,6 +79,7 @@ const TranscriptUploader = () => {
       const response = await fetch(`${apiBase}/transcripts/ingest`, {
         method: "POST",
         body: form,
+        credentials: "include",
       });
 
       let data: TranscriptResult | null = null;
