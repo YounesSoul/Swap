@@ -1,7 +1,7 @@
 import Hero from "./Hero"
 import About from "./About"
 import Service from "./Service"
-import Project from "./Project"
+// import Project from "./Project"
 import Process from "./Process"
 import Testimonial from "./Testimonial"
 import Blog from "./Blog"

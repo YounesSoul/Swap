@@ -1,5 +1,5 @@
 import { Swiper, SwiperSlide } from 'swiper/react';
-import { Autoplay, Navigation } from 'swiper/modules';
+import { Navigation } from 'swiper/modules';
 import type { JSX } from "react";
 
 interface DataType {
@@ -45,14 +45,14 @@ const testi_data: DataType[] = [
   },
 ];
 
-const brand_data: string[] = [
-  "/assets/img/brand/logo-1.png",
-  "/assets/img/brand/logo-2.png",
-  "/assets/img/brand/logo-3.png",
-  "/assets/img/brand/logo-4.png",
-  "/assets/img/brand/logo-5.png",
-  "/assets/img/brand/logo-3.png",
-];
+// const brand_data: string[] = [
+//   "/assets/img/brand/logo-1.png",
+//   "/assets/img/brand/logo-2.png",
+//   "/assets/img/brand/logo-3.png",
+//   "/assets/img/brand/logo-4.png",
+//   "/assets/img/brand/logo-5.png",
+//   "/assets/img/brand/logo-3.png",
+// ];
 
 const setting1 = {
   slidesPerView: 1,
@@ -65,19 +65,19 @@ const setting1 = {
   },
 };
 
-const setting2 = {
-  loop: true,
-  freeMode: true,
-  slidesPerView: 'auto' as const,
-  spaceBetween: 30,
-  centeredSlides: true,
-  allowTouchMove: false,
-  speed: 9000,
-  autoplay: {
-    delay: 1,
-    disableOnInteraction: true,
-  },
-};
+// const setting2 = {
+//   loop: true,
+//   freeMode: true,
+//   slidesPerView: 'auto' as const,
+//   spaceBetween: 30,
+//   centeredSlides: true,
+//   allowTouchMove: false,
+//   speed: 9000,
+//   autoplay: {
+//     delay: 1,
+//     disableOnInteraction: true,
+//   },
+// };
 
 const Testimonial = () => {
   return (
