@@ -33,7 +33,7 @@ class AddSelectedCoursesBody {
 export class TranscriptsController {
   constructor(private svc: TranscriptsService) {}
 
-  @Post('ingest')
+  @Post('upload')
   @UseInterceptors(FileInterceptor('file', {
     storage: memoryStorage(),
     limits: { fileSize: 10 * 1024 * 1024 }, // 10MB

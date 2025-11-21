@@ -309,7 +309,7 @@ const Profile = () => {
       const payload = new FormData();
       payload.append("file", transcriptFile);
       payload.append("email", me.email);
-      const response = await fetch(`${apiBase}/transcripts/ingest`, {
+      const response = await fetch(`${apiBase}/transcripts/upload`, {
         method: "POST",
         body: payload,
       });

@@ -76,7 +76,7 @@ const TranscriptUploader = () => {
       form.append("file", file);
       form.append("email", user.email);
 
-      const response = await fetch(`${apiBase}/transcripts/ingest`, {
+      const response = await fetch(`${apiBase}/transcripts/upload`, {
         method: "POST",
         body: form,
         credentials: "include",
