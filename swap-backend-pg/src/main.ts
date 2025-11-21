@@ -10,6 +10,16 @@ async function bootstrap() {
     rawBody: true,
   });
   
+  // Request logging middleware
+  app.use((req, res, next) => {
+    if (req.url.includes('/transcripts/ingest')) {
+      console.log('[REQUEST] Method:', req.method, 'URL:', req.url);
+      console.log('[REQUEST] Headers:', JSON.stringify(req.headers, null, 2));
+      console.log('[REQUEST] Content-Type:', req.headers['content-type']);
+    }
+    next();
+  });
+  
   // Enhanced CORS configuration for production
   app.enableCors({
     origin: [
