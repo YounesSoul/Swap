@@ -306,12 +306,24 @@ const Profile = () => {
 
     setTranscriptBusy(true);
     try {
-      const payload = new FormData();
-      payload.append("file", transcriptFile);
-      payload.append("email", me.email);
+      // Convert file to base64 to bypass Railway proxy restrictions
+      const reader = new FileReader();
+      const base64Promise = new Promise<string>((resolve, reject) => {
+        reader.onload = () => resolve(reader.result as string);
+        reader.onerror = reject;
+        reader.readAsDataURL(transcriptFile);
+      });
+      
+      const base64Data = await base64Promise;
+      
       const response = await fetch(`${apiBase}/transcripts/upload`, {
         method: "POST",
-        body: payload,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: me.email,
+          filename: transcriptFile.name,
+          fileData: base64Data,
+        }),
       });
       const data = await response.json().catch(() => null);
       if (!response.ok || !data?.ok) {

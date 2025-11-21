@@ -72,13 +72,25 @@ const TranscriptUploader = () => {
 
     try {
       setBusy(true);
-      const form = new FormData();
-      form.append("file", file);
-      form.append("email", user.email);
+      
+      // Convert file to base64 to bypass Railway proxy restrictions
+      const reader = new FileReader();
+      const base64Promise = new Promise<string>((resolve, reject) => {
+        reader.onload = () => resolve(reader.result as string);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+      
+      const base64Data = await base64Promise;
 
       const response = await fetch(`${apiBase}/transcripts/upload`, {
         method: "POST",
-        body: form,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: user.email,
+          filename: file.name,
+          fileData: base64Data,
+        }),
         credentials: "include",
       });
 

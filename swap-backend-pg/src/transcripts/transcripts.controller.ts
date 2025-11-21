@@ -9,7 +9,9 @@ import { Type } from 'class-transformer';
 import { TranscriptsService } from './transcripts.service';
 
 class IngestBody { 
-  @IsEmail() email!: string; 
+  @IsEmail() email!: string;
+  @IsString() filename!: string;
+  @IsString() fileData!: string; // base64 encoded file
 }
 
 class GetTranscriptsQuery {
@@ -34,43 +36,40 @@ export class TranscriptsController {
   constructor(private svc: TranscriptsService) {}
 
   @Post('upload')
-  @UseInterceptors(FileInterceptor('file', {
-    storage: memoryStorage(),
-    limits: { fileSize: 10 * 1024 * 1024 }, // 10MB
-    fileFilter: (req, file, cb) => {
-      console.log('[TRANSCRIPT] File filter - mimetype:', file.mimetype, 'originalname:', file.originalname);
-      if (!file.mimetype.includes('pdf')) {
-        cb(new BadRequestException('Only PDF files are allowed'), false);
-      } else {
-        cb(null, true);
-      }
-    },
-  }))
-  async ingest(@UploadedFile() file: Express.Multer.File, @Body() body: IngestBody) {
-    console.log('[TRANSCRIPT] Request received - file:', !!file, 'body:', body);
-    console.log('[TRANSCRIPT] File details:', file ? { 
-      fieldname: file.fieldname, 
-      originalname: file.originalname, 
-      mimetype: file.mimetype,
-      size: file.size 
-    } : 'NO FILE');
+  async ingest(@Body() body: IngestBody) {
+    console.log('[TRANSCRIPT] Request received - email:', body.email, 'filename:', body.filename);
     
     if (!body || !body.email) {
       console.error('[TRANSCRIPT] Missing email in body');
       throw new BadRequestException('Missing email in body');
     }
-    if (!file) {
-      console.error('[TRANSCRIPT] Missing file upload');
-      throw new BadRequestException('Missing file upload');
+    if (!body.fileData) {
+      console.error('[TRANSCRIPT] Missing file data');
+      throw new BadRequestException('Missing file data');
     }
 
     try {
+      // Decode base64 file data
+      const base64Data = body.fileData.split(',')[1] || body.fileData;
+      const buffer = Buffer.from(base64Data, 'base64');
+      
+      console.log('[TRANSCRIPT] File decoded - size:', buffer.length, 'bytes');
+      
+      // Create a mock Multer file object
+      const file: Express.Multer.File = {
+        fieldname: 'file',
+        originalname: body.filename,
+        encoding: '7bit',
+        mimetype: 'application/pdf',
+        buffer: buffer,
+        size: buffer.length,
+      } as Express.Multer.File;
+
       const result = await this.svc.processPdfTranscript(body.email, file);
       console.log('[TRANSCRIPT] Processing successful');
       return result;
     } catch (err: any) {
       console.error('[TRANSCRIPT] Processing failed:', err?.message);
-      // surface useful error messages for the client (avoid leaking internals)
       throw new BadRequestException(err?.message || 'Transcript processing failed');
     }
   }
