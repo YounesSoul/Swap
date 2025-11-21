@@ -11,8 +11,8 @@ async function bootstrap() {
   });
   
   // Request logging middleware
-  app.use((req, res, next) => {
-    if (req.url.includes('/transcripts/ingest')) {
+  app.use((req: any, res: any, next: any) => {
+    if (req.url && req.url.includes('/transcripts/ingest')) {
       console.log('[REQUEST] Method:', req.method, 'URL:', req.url);
       console.log('[REQUEST] Headers:', JSON.stringify(req.headers, null, 2));
       console.log('[REQUEST] Content-Type:', req.headers['content-type']);
