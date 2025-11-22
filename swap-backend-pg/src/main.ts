@@ -3,12 +3,16 @@ import 'reflect-metadata';
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { ValidationPipe } from '@nestjs/common';
+import { json, urlencoded } from 'body-parser';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, {
     bodyParser: true,
     rawBody: true,
   });
+  // Allow large base64 payloads (transcripts) without 413 errors
+  app.use(json({ limit: '15mb' }));
+  app.use(urlencoded({ limit: '15mb', extended: true }));
   
   // Request logging middleware
   app.use((req: any, res: any, next: any) => {
