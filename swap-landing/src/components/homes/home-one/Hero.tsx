@@ -17,9 +17,19 @@ const setting = {
   },
 };
 
+const heroBackground = "/assets/img/about/3333.jpg";
+
 const Hero = () => {
+  const heroBackgroundStyle = {
+    backgroundImage:
+      `linear-gradient(180deg, rgba(255,255,255,0.97) 0%, rgba(255,255,255,0.93) 45%, rgba(255,255,255,0.9) 100%), url(${heroBackground})`,
+  } as const;
+
   return (
-    <div className="td-hero-area td-hero-spacing p-relative fix z-index-1">
+    <div
+      className="td-hero-area td-hero-spacing p-relative fix z-index-1 aui-hero"
+      style={heroBackgroundStyle}
+    >
       <img className="td-hero-shape p-absolute" src="/assets/img/hero/shape.png" alt="" />
       <div className="container">
         <div className="row justify-content-center">
@@ -32,6 +42,17 @@ const Hero = () => {
                   SKILLS &
                 </h2>
                 <h2 className="title">KNOWLEDGE</h2>
+                <p className="td-hero-subtitle">
+                  Built with the Al Akhawayn University community, Swap lets you earn, teach, and learn inside a trusted peer-to-peer network.
+                </p>
+                <div className="td-hero-cta">
+                  <a className="td-btn td-btn-lg td-btn-primary" href="/register">
+                    Join Swap
+                  </a>
+                  <a className="td-btn td-btn-lg td-btn-outline" href="/features/knowledge-exchange">
+                    How it works
+                  </a>
+                </div>
               </div>
             </div>
           </div>
@@ -39,7 +60,7 @@ const Hero = () => {
       </div>
 
       {/* marquee */}
-      <div className="td-hero-text-slide  wow fadeInUp" data-wow-delay=".7s" data-wow-duration="1s">
+      <div className="td-hero-text-slide marquee-centered wow fadeInUp" data-wow-delay=".7s" data-wow-duration="1s">
         <div className="container-fluid">
           <div className="row">
             <Swiper

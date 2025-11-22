@@ -14,6 +14,50 @@
 @import "./profile";
 @import "./features";
 @import "./onboarding";
+
+.aui-hero {
+	background-size: cover;
+	background-position: center;
+	background-repeat: no-repeat;
+	border-radius: 40px;
+	overflow: hidden;
+	box-shadow: 0 35px 80px rgba(15, 18, 40, 0.18);
+}
+
+.td-hero-subtitle {
+	max-width: 720px;
+	margin: 18px auto 30px;
+	font-size: clamp(18px, 2vw, 22px);
+	line-height: 1.5;
+	color: var(--td-grey-1);
+}
+
+.td-hero-cta {
+	display: flex;
+	justify-content: center;
+	gap: 16px;
+	flex-wrap: wrap;
+}
+
+.td-hero-text-slide.marquee-centered {
+	margin-top: -300px;
+	text-align: center;
+}
+
+.td-hero-text-slide.marquee-centered .td-hero-text-slide-active {
+	width: min(1600px, 100%);
+	margin: 0 auto;
+}
+
+.td-hero-text-slide.marquee-centered .swiper-wrapper {
+	align-items: center;
+}
+
+.td-hero-text-slide.marquee-centered .swiper-slide {
+	display: flex;
+	justify-content: center;
+}
+
 .td-auth-area {
 	position: relative;
 	overflow: hidden;
