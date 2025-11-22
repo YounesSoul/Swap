@@ -4,7 +4,7 @@ import {
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { memoryStorage } from 'multer';
-import { IsEmail, IsString, IsOptional, IsArray, ValidateNested } from 'class-validator';
+import { IsEmail, IsString, IsArray, ValidateNested } from 'class-validator';
 import { Type } from 'class-transformer';
 import { TranscriptsService } from './transcripts.service';
 
@@ -12,6 +12,10 @@ class IngestBody {
   @IsEmail() email!: string;
   @IsString() filename!: string;
   @IsString() fileData!: string; // base64 encoded file
+}
+
+class IngestMultipartBody {
+  @IsEmail() email!: string;
 }
 
 class GetTranscriptsQuery {
@@ -35,8 +39,12 @@ class AddSelectedCoursesBody {
 export class TranscriptsController {
   constructor(private svc: TranscriptsService) {}
 
+  /**
+   * Preferred JSON upload endpoint used by swap-landing.
+   * Accepts a base64-encoded PDF payload so we can bypass the Railway proxy limits.
+   */
   @Post('upload')
-  async ingest(@Body() body: IngestBody) {
+  async upload(@Body() body: IngestBody) {
     console.log('[TRANSCRIPT] Request received - email:', body.email, 'filename:', body.filename);
     
     if (!body || !body.email) {
@@ -72,6 +80,31 @@ export class TranscriptsController {
       console.error('[TRANSCRIPT] Processing failed:', err?.message);
       throw new BadRequestException(err?.message || 'Transcript processing failed');
     }
+  }
+
+  /**
+   * Legacy multipart route kept for backward compatibility (older clients / dev tools).
+   */
+  @Post('ingest')
+  @UseInterceptors(FileInterceptor('file', {
+    storage: memoryStorage(),
+    limits: { fileSize: 10 * 1024 * 1024 },
+    fileFilter: (req, file, cb) => {
+      if (!file.mimetype.includes('pdf')) {
+        cb(new BadRequestException('Only PDF files are allowed'), false);
+      } else {
+        cb(null, true);
+      }
+    },
+  }))
+  async ingest(@UploadedFile() file: Express.Multer.File, @Body() body: IngestMultipartBody) {
+    if (!body?.email) {
+      throw new BadRequestException('Missing email in body');
+    }
+    if (!file) {
+      throw new BadRequestException('Missing file upload');
+    }
+    return this.svc.processPdfTranscript(body.email, file);
   }
 
   @Get('history')
