@@ -25,26 +25,22 @@ async function bootstrap() {
   });
   
   // Enhanced CORS configuration for production
-  const allowedOrigins: (string | RegExp)[] = [
-    'http://localhost:5173',
-    'http://localhost:3000',
-    'https://swap-kohl.vercel.app',
-    'https://swap-git-main-younesss-projects-9ada0f82.vercel.app',
-    /\.vercel\.app$/,
-  ];
-
   app.enableCors({
-    origin: (origin, callback) => {
-      if (!origin) {
-        return callback(null, true);
-      }
-      if (allowedOrigins.some((o) => (typeof o === 'string' ? origin === o : o.test(origin)))) {
-        return callback(null, true);
-      }
-      return callback(new Error(`Origin ${origin} not allowed by CORS`));
-    },
+    origin: [
+      'http://localhost:5173',
+      'http://localhost:3000',
+      'https://swap-kohl.vercel.app',
+      'https://swap-git-main-younesss-projects-9ada0f82.vercel.app',
+      /\.vercel\.app$/,
+    ],
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-    allowedHeaders: '*',
+    allowedHeaders: [
+      'Content-Type',
+      'Authorization',
+      'Accept',
+      'Origin',
+      'X-Requested-With'
+    ],
     credentials: true,
     preflightContinue: false,
     optionsSuccessStatus: 204,
