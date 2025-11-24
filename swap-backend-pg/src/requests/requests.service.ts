@@ -138,10 +138,14 @@ export class RequestsService {
   async accept(id: string, actingEmail: string) {
     const to = await this.ensureUser(actingEmail);
 
-    return this.prisma.$transaction(async (tx: Prisma.TransactionClient) => {
-      const req = await tx.request.findUnique({ 
+    const result = await this.prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+      const req = await tx.request.findUnique({
         where: { id },
-        include: { timeSlot: true } // Include timeSlot to get schedule info
+        include: {
+          timeSlot: true,
+          fromUser: { select: { email: true } },
+          toUser: { select: { email: true } },
+        },
       });
       if (!req) throw new BadRequestException('Request not found');
       if (req.toUserId !== to.id) throw new BadRequestException('Not authorized to accept');
@@ -187,7 +191,7 @@ export class RequestsService {
 
       // Get session type from timeSlot if available
       const sessionType = req.timeSlot?.sessionType || SessionType.ONLINE;
-      
+
       const session = await tx.session.create({
         data: {
           teacherId: req.toUserId,
@@ -200,27 +204,6 @@ export class RequestsService {
           sessionType,
         },
       });
-      
-      // Generate Teams meeting link for online sessions
-      if (sessionType === SessionType.ONLINE) {
-        const teacher = await tx.user.findUnique({ where: { id: req.toUserId } });
-        const learner = await tx.user.findUnique({ where: { id: req.fromUserId } });
-        
-        const meetingLink = await this.meetingsService.generateMeetingLink(
-          session.id,
-          teacher?.email || '',
-          learner?.email || '',
-          req.courseCode,
-          startAt,
-          req.minutes,
-        );
-        
-        // Update session with meeting link
-        await tx.session.update({
-          where: { id: session.id },
-          data: { meetingLink },
-        });
-      }
 
       await tx.request.update({
         where: { id },
@@ -248,8 +231,40 @@ export class RequestsService {
         create: { participantAId: a, participantBId: b },
       });
 
-      return session;
-    });
+      return {
+        session,
+        sessionType,
+        startAt,
+        minutes: req.minutes,
+        courseCode: req.courseCode,
+        teacherEmail: req.toUser?.email || '',
+        learnerEmail: req.fromUser?.email || '',
+      };
+    }, { timeout: 20000 });
+
+    if (!('session' in result)) {
+      return result;
+    }
+
+    let session = result.session;
+
+    if (result.sessionType === SessionType.ONLINE) {
+      const meetingLink = await this.meetingsService.generateMeetingLink(
+        session.id,
+        result.teacherEmail,
+        result.learnerEmail,
+        result.courseCode,
+        result.startAt,
+        result.minutes,
+      );
+
+      session = await this.prisma.session.update({
+        where: { id: session.id },
+        data: { meetingLink },
+      });
+    }
+
+    return session;
   }
 
   async decline(id: string, actingEmail: string) {
