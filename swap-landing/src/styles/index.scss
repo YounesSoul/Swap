@@ -14,6 +14,203 @@
 @import "./profile";
 @import "./features";
 @import "./onboarding";
+
+.swap-hero {
+	position: relative;
+	padding: clamp(90px, 10vw, 140px) 0 90px;
+	background: linear-gradient(180deg, #ffffff 0%, #f6f8ff 55%, #ffffff 100%);
+	overflow: hidden;
+	font-family: var(--td-ff-body);
+}
+
+.swap-hero__halo {
+	position: absolute;
+	top: -120px;
+	right: -80px;
+	width: 420px;
+	height: 420px;
+	background: radial-gradient(circle, rgba(190, 255, 1, 0.35), transparent 65%);
+	filter: blur(6px);
+	opacity: 0.6;
+}
+
+.swap-hero__grid {
+	position: relative;
+	z-index: 2;
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+	gap: clamp(32px, 5vw, 72px);
+	align-items: center;
+}
+
+.swap-hero__copy {
+	max-width: 560px;
+}
+
+.swap-hero__eyebrow {
+	display: inline-flex;
+	align-items: center;
+	gap: 8px;
+	padding: 8px 16px;
+	border-radius: 999px;
+	background: rgba(190, 255, 1, 0.25);
+	font-size: 13px;
+	letter-spacing: 0.18em;
+	text-transform: uppercase;
+	font-weight: 600;
+	color: var(--td-common-black);
+}
+
+
+.swap-hero__copy h1 {
+	margin: 28px 0 18px;
+	font-size: clamp(36px, 5vw, 60px);
+	line-height: 1.05;
+	color: var(--td-common-black);
+	font-family: var(--td-ff-heading);
+}
+
+.swap-hero__copy p {
+	font-size: 18px;
+	line-height: 1.6;
+	color: var(--td-grey-1);
+	margin-bottom: 32px;
+	font-family: var(--td-ff-body);
+}
+
+.swap-hero__actions {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 16px;
+	margin-bottom: 28px;
+}
+
+.swap-hero__cta {
+	display: inline-flex;
+	align-items: center;
+	gap: 12px;
+	padding: 14px 22px 14px 24px;
+	border-radius: 999px;
+	font-weight: 700;
+	letter-spacing: 0.08em;
+	text-transform: uppercase;
+	text-decoration: none;
+	font-size: 13px;
+	transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+
+.swap-hero__cta-icon {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 40px;
+	height: 40px;
+	border-radius: 50%;
+	font-size: 15px;
+}
+
+.swap-hero__cta--primary {
+	background: linear-gradient(90deg, #befe01, #dfff6b);
+	color: var(--td-common-black);
+	box-shadow: 0 14px 25px rgba(190, 255, 1, 0.45);
+}
+
+.swap-hero__cta--primary .swap-hero__cta-icon {
+	background: rgba(255, 255, 255, 0.9);
+	color: var(--td-common-black);
+}
+
+.swap-hero__cta--outline {
+	border: 1px solid rgba(28, 29, 31, 0.15);
+	background: var(--td-common-white);
+	color: var(--td-common-black);
+}
+
+.swap-hero__cta--outline .swap-hero__cta-icon {
+	background: rgba(190, 255, 1, 0.25);
+	color: var(--td-common-black);
+}
+
+.swap-hero__cta:hover {
+	transform: translateY(-2px);
+	box-shadow: 0 20px 40px rgba(15, 18, 40, 0.15);
+}
+
+.swap-hero__visual {
+	position: relative;
+	min-height: 420px;
+}
+
+.swap-hero__glow {
+	position: absolute;
+	top: -40px;
+	left: -30px;
+	width: 360px;
+	height: 360px;
+	background: radial-gradient(circle, rgba(190, 255, 1, 0.35), transparent 70%);
+	filter: blur(10px);
+	opacity: 0.7;
+}
+
+.swap-hero__visual-frame {
+	position: relative;
+	border-radius: 32px;
+	overflow: hidden;
+	box-shadow: 0 40px 80px rgba(15, 18, 40, 0.15);
+	border: 1px solid rgba(28, 29, 31, 0.08);
+	background: linear-gradient(135deg, rgba(255, 255, 255, 0.2), rgba(17, 17, 17, 0.05));
+}
+
+.swap-hero__visual-frame img {
+	display: block;
+	width: 100%;
+	height: 100%;
+	object-fit: cover;
+}
+
+.swap-hero__chip {
+	position: absolute;
+	padding: 14px 18px;
+	border-radius: 18px;
+	box-shadow: 0 20px 30px rgba(15, 18, 40, 0.15);
+	background: rgba(255, 255, 255, 0.92);
+	border: 1px solid rgba(28, 29, 31, 0.08);
+	max-width: 180px;
+}
+
+.swap-hero__chip strong {
+	display: block;
+	font-size: 18px;
+	font-weight: 700;
+}
+
+.swap-hero__chip span {
+	display: block;
+	margin-top: 4px;
+	font-size: 13px;
+	color: var(--td-grey-5);
+}
+
+.swap-hero__chip--primary {
+	top: 24px;
+	right: 24px;
+}
+
+.swap-hero__chip--secondary {
+	bottom: 24px;
+	left: 24px;
+}
+
+@media (max-width: 575px) {
+	.swap-hero__visual-frame {
+		border-radius: 24px;
+	}
+
+	.swap-hero__chip {
+		position: static;
+		margin: 12px;
+	}
+}
 .td-auth-area {
 	position: relative;
 	overflow: hidden;
