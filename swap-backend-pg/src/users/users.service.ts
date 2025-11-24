@@ -158,7 +158,7 @@ export class UsersService {
         where: { id: user.id },
         include: { userSkills: { include: { skill: true } }, userCourses: true },
       });
-    });
+    }, { timeout: 20000 });
   }
 
   async addSkill(email: string, name: string, level: SkillLevel = 'ADVANCED') {
