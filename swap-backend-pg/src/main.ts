@@ -39,7 +39,8 @@ async function bootstrap() {
       'Authorization',
       'Accept',
       'Origin',
-      'X-Requested-With'
+      'X-Requested-With',
+      'x-user-email'
     ],
     credentials: true,
     preflightContinue: false,

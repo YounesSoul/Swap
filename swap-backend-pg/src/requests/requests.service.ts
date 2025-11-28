@@ -65,6 +65,22 @@ export class RequestsService {
     if (timeSlot.teacherId !== toUser.id) {
       throw new BadRequestException('Time slot does not belong to this teacher');
     }
+
+    const pendingSlotRequest = await this.prisma.request.findFirst({
+      where: { timeSlotId, status: RequestStatus.PENDING },
+      select: { id: true },
+    });
+    if (pendingSlotRequest) {
+      throw new BadRequestException('Time slot already has a pending request');
+    }
+
+    const activeSession = await this.prisma.session.findFirst({
+      where: { timeSlotId, status: { not: 'done' } },
+      select: { id: true },
+    });
+    if (activeSession) {
+      throw new BadRequestException('Time slot is already booked');
+    }
   }
 
   // require ≥1 token

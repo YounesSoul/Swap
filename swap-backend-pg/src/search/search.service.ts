@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { RequestStatus } from '@prisma/client';
 import { PrismaService } from '../prisma.service';
 import { RatingService } from '../ratings/ratings.service';
 
@@ -52,6 +53,8 @@ export class SearchService {
             type: 'skill',
             skillName,
             isActive: true,
+            requests: { none: { status: RequestStatus.PENDING } },
+            sessions: { none: { status: { not: 'done' } } },
           },
           orderBy: [{ dayOfWeek: 'asc' }, { startTime: 'asc' }],
         });
@@ -93,6 +96,8 @@ export class SearchService {
           type: 'course',
           courseCode: result.course.code,
           isActive: true,
+          requests: { none: { status: RequestStatus.PENDING } },
+          sessions: { none: { status: { not: 'done' } } },
         },
         orderBy: [{ dayOfWeek: 'asc' }, { startTime: 'asc' }],
       });

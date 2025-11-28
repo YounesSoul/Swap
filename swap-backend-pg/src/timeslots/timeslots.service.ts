@@ -1,5 +1,5 @@
 import { Injectable, Inject, BadRequestException, NotFoundException } from '@nestjs/common';
-import { DayOfWeek, SessionType } from '@prisma/client';
+import { DayOfWeek, SessionType, RequestStatus } from '@prisma/client';
 import { PrismaService } from '../prisma.service';
 
 @Injectable()
@@ -90,13 +90,18 @@ export class TimeSlotsService {
 
   // Get available time slots for a specific course or skill
   async getAvailableSlots(type: 'course' | 'skill', courseCodeOrSkill: string) {
-    const where =
+    const baseWhere =
       type === 'course'
-        ? { type: 'course', courseCode: courseCodeOrSkill, isActive: true }
-        : { type: 'skill', skillName: courseCodeOrSkill, isActive: true };
+        ? { type: 'course', courseCode: courseCodeOrSkill }
+        : { type: 'skill', skillName: courseCodeOrSkill };
 
     return this.prisma.timeSlot.findMany({
-      where,
+      where: {
+        ...baseWhere,
+        isActive: true,
+        requests: { none: { status: RequestStatus.PENDING } },
+        sessions: { none: { status: { not: 'done' } } },
+      },
       include: {
         teacher: {
           select: {
@@ -116,20 +121,24 @@ export class TimeSlotsService {
 
   // Get available slots for a specific teacher and course/skill
   async getTeacherAvailableSlots(teacherId: string, type: 'course' | 'skill', courseCodeOrSkill: string) {
-    const where: any = {
+    const baseWhere: any = {
       teacherId,
       type,
-      isActive: true,
     };
 
     if (type === 'course') {
-      where.courseCode = courseCodeOrSkill;
+      baseWhere.courseCode = courseCodeOrSkill;
     } else {
-      where.skillName = courseCodeOrSkill;
+      baseWhere.skillName = courseCodeOrSkill;
     }
 
     return this.prisma.timeSlot.findMany({
-      where,
+      where: {
+        ...baseWhere,
+        isActive: true,
+        requests: { none: { status: RequestStatus.PENDING } },
+        sessions: { none: { status: { not: 'done' } } },
+      },
       orderBy: [{ dayOfWeek: 'asc' }, { startTime: 'asc' }],
     });
   }
