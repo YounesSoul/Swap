@@ -182,7 +182,9 @@ const Onboarding = () => {
                     placeholder="Search and select skills..."
                     className="react-select-container"
                     classNamePrefix="react-select"
+                    menuPortalTarget={document.body}
                     styles={{
+                      menuPortal: (base) => ({ ...base, zIndex: 9999 }),
                       control: (base) => ({
                         ...base,
                         minHeight: '48px',
@@ -279,7 +281,9 @@ const Onboarding = () => {
                     placeholder="Search and select skills..."
                     className="react-select-container"
                     classNamePrefix="react-select"
+                    menuPortalTarget={document.body}
                     styles={{
+                      menuPortal: (base) => ({ ...base, zIndex: 9999 }),
                       control: (base) => ({
                         ...base,
                         minHeight: '48px',
@@ -318,7 +322,9 @@ const Onboarding = () => {
                     placeholder="Search and select course prefixes..."
                     className="react-select-container"
                     classNamePrefix="react-select"
+                    menuPortalTarget={document.body}
                     styles={{
+                      menuPortal: (base) => ({ ...base, zIndex: 9999 }),
                       control: (base) => ({
                         ...base,
                         minHeight: '48px',

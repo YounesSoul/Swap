@@ -5,7 +5,6 @@ import {
   Clock,
   GraduationCap,
   Loader2,
-  MapPin,
   Pencil,
   Plus,
   Star,
@@ -27,8 +26,6 @@ type ProfileFormState = {
   timezone: string;
 };
 
-type CourseGrade = "A+" | "A" | "A-" | "B+" | "B";
-
 type TimeSlot = {
   id: string;
   type: "course" | "skill";
@@ -48,14 +45,6 @@ const skillLevels: Array<{ value: SkillLevel; label: string }> = [
   { value: "EXPERT", label: "Expert" },
 ];
 
-const courseGrades: Array<{ value: CourseGrade; label: string }> = [
-  { value: "A+", label: "A+" },
-  { value: "A", label: "A" },
-  { value: "A-", label: "A-" },
-  { value: "B+", label: "B+" },
-  { value: "B", label: "B" },
-];
-
 const isCompleted = (status?: string | null) => {
   const value = status?.toLowerCase?.() ?? "";
   return value === "done" || value === "completed";
@@ -73,7 +62,6 @@ const Profile = () => {
   const sessions = useSwap((state: SwapState) => state.sessions);
   const addSkill = useSwap((state: SwapState) => state.addSkill);
   const removeSkill = useSwap((state: SwapState) => state.removeSkill);
-  const addCourse = useSwap((state: SwapState) => state.addCourse);
   const removeCourse = useSwap((state: SwapState) => state.removeCourse);
   const isSeeded = useSwap((state: SwapState) => state.isSeeded);
 
@@ -89,9 +77,6 @@ const Profile = () => {
   const [skillBusy, setSkillBusy] = useState(false);
   const [skillPendingRemove, setSkillPendingRemove] = useState<string | null>(null);
 
-  const [courseCode, setCourseCode] = useState("");
-  const [courseGrade, setCourseGrade] = useState<CourseGrade>("A");
-  const [courseBusy, setCourseBusy] = useState(false);
   const [coursePendingRemove, setCoursePendingRemove] = useState<string | null>(null);
 
   const [transcriptFile, setTranscriptFile] = useState<File | null>(null);
@@ -251,27 +236,6 @@ const Profile = () => {
       toast.error("Could not remove that skill.");
     } finally {
       setSkillPendingRemove(null);
-    }
-  };
-
-  const handleCourseSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    const value = courseCode.trim().toUpperCase();
-    if (!value) {
-      toast.error("Enter a course code first.");
-      return;
-    }
-
-    setCourseBusy(true);
-    try {
-      await addCourse(value, courseGrade);
-      setCourseCode("");
-      toast.success("Course added");
-    } catch (error) {
-      console.error("Failed to add course", error);
-      toast.error("Could not add that course.");
-    } finally {
-      setCourseBusy(false);
     }
   };
 
@@ -439,13 +403,6 @@ const Profile = () => {
     };
   }, [myCourses.length, mySkills.length, sessions, tokenBalance]);
 
-  const upcomingSessions = useMemo(() => {
-    return (sessions ?? [])
-      .filter((session) => !isCompleted(session.status) && session.startAt)
-      .sort((a, b) => new Date(a.startAt ?? 0).getTime() - new Date(b.startAt ?? 0).getTime())
-      .slice(0, 3);
-  }, [sessions]);
-
   const loadingPage = authLoading || (!!user && !isSeeded);
 
   const body = loadingPage ? (
@@ -596,7 +553,7 @@ const Profile = () => {
                     type="text"
                     value={skillInput}
                     onChange={(event) => setSkillInput(event.currentTarget.value)}
-                    placeholder="e.g. Data Structures"
+                    placeholder="e.g. Chess"
                   />
                 </label>
                 <label htmlFor="skill-level" className="td-profile-card__form-label">
@@ -635,7 +592,7 @@ const Profile = () => {
             </header>
             {myCourses.length === 0 ? (
               <div className="td-profile-card__empty">
-                <p>Upload a transcript or add courses manually to boost your profile.</p>
+                <p>Upload a transcript to add courses to your profile.</p>
               </div>
             ) : (
               <ul className="td-profile-card__chips">
@@ -654,51 +611,11 @@ const Profile = () => {
                 ))}
               </ul>
             )}
-            <form className="td-profile-card__form" onSubmit={handleCourseSubmit}>
-              <div className="td-profile-card__form-row">
-                <label htmlFor="course-code" className="td-profile-card__form-label">
-                  Course code
-                  <input
-                    id="course-code"
-                    type="text"
-                    value={courseCode}
-                    onChange={(event) => setCourseCode(event.currentTarget.value)}
-                    placeholder="e.g. CS101"
-                  />
-                </label>
-                <label htmlFor="course-grade" className="td-profile-card__form-label">
-                  Grade
-                  <select
-                    id="course-grade"
-                    value={courseGrade}
-                    onChange={(event) => setCourseGrade(event.currentTarget.value as CourseGrade)}
-                  >
-                    {courseGrades.map((option) => (
-                      <option key={option.value} value={option.value}>
-                        {option.label}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-              </div>
-              <button type="submit" className="td-btn td-btn-lg" disabled={courseBusy}>
-                {courseBusy ? (
-                  <>
-                    <Loader2 size={16} className="td-profile__spinner" /> Adding…
-                  </>
-                ) : (
-                  <>
-                    <Plus size={16} aria-hidden="true" /> Add course
-                  </>
-                )}
-              </button>
-            </form>
           </article>
 
           <article className="td-profile-card" aria-label="Transcript uploader">
             <header className="td-profile-card__head">
               <h2>Import from transcript</h2>
-              <span className="td-profile-card__chip td-profile-card__chip--soft">Optional</span>
             </header>
             <p className="td-profile-card__text">
               Upload a PDF transcript and we will automatically pull in A / A+ courses. Review the output before saving to make sure everything looks right.
@@ -795,32 +712,6 @@ const Profile = () => {
             </button>
           </article>
 
-          <article className="td-profile-card" aria-label="Upcoming sessions">
-            <header className="td-profile-card__head">
-              <h2>Upcoming sessions</h2>
-              <span className="td-profile-card__chip td-profile-card__chip--soft">{upcomingSessions.length}</span>
-            </header>
-            {upcomingSessions.length === 0 ? (
-              <div className="td-profile-card__empty">
-                <p>No sessions scheduled. Explore matches to plan your next exchange.</p>
-              </div>
-            ) : (
-              <ul className="td-profile-card__list">
-                {upcomingSessions.map((session) => (
-                  <li key={session.id}>
-                    <div>
-                      <p className="td-profile-card__list-title">{session.courseCode}</p>
-                      <p className="td-profile-card__list-subtitle">{session.teacher?.email === me.email ? "Teaching" : "Learning"}</p>
-                    </div>
-                    <div className="td-profile-card__list-meta">
-                      <MapPin size={14} aria-hidden="true" />
-                      <span>{new Date(session.startAt ?? 0).toLocaleString()}</span>
-                    </div>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </article>
         </section>
       </div>
 

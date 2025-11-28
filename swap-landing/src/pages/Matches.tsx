@@ -304,8 +304,8 @@ const Matches = () => {
   const hasResults = results.length > 0;
   const suggestionMode = mode;
   const suggestions = suggestionMode === "course"
-    ? ["MATH305", "CS101", "CHEM120", "ECON212", "ENG201"]
-    : ["Python", "Linear Algebra", "Adobe XD", "Guitar", "Chess"];
+    ? ["CSC1401", "MATH305", "PHY201", "ECON212", "ENG201"]
+    : ["Chess", "Guitar", "Spanish", "Photography", "Python"];
   const disableSearch = loading || query.trim().length === 0;
 
   const pageBody = isLoadingPage ? (
@@ -388,7 +388,7 @@ const Matches = () => {
               id="matches-search"
               className="td-matches__input"
               type="search"
-              placeholder={mode === "skill" ? "Search skills like Python, design, or guitar" : "Search course codes like CS101"}
+              placeholder={mode === "skill" ? "Search skills like Chess, Guitar, or Spanish" : "Search course codes like CSC1401"}
               value={query}
               onChange={(event) => setQuery(event.currentTarget.value)}
               autoComplete="off"
